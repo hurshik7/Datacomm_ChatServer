@@ -11,32 +11,36 @@ struct User {
     char lastName[MAX_LAST_NAME_LENGTH];
 };
 
+void printUser(struct User user);
+DBM* createDatabase();
+void insertUser(DBM *db);
+void fetchUser(DBM *db);
+void optionHandler(DBM* db);
+
+int main() {
+    DBM* db = createDatabase();
+    optionHandler(db);
+
+    return 0;
+}
+
 void printUser(struct User user) {
     printf("First name: %s\n", user.firstName);
     printf("Last name: %s\n", user.lastName);
 }
 
-void fetchUser(DBM *db) {
-    char firstName[MAX_FIRST_NAME_LENGTH];
+DBM* createDatabase() {
+    char fileName[30];
+    printf("Enter database filename: ");
+    scanf("%s", fileName);
 
-    printf("Enter first name: ");
-    scanf("%s", firstName);
-
-    datum key, value;
-    memset(&key, 0, sizeof(datum));
-    memset(&value, 0, sizeof(datum));
-
-    key.dptr = firstName;
-    key.dsize = strlen(firstName) + 1;
-
-    value = dbm_fetch(db, key);
-    if (value.dptr == NULL) {
-        printf("Error: User not found.\n");
+    DBM *db = dbm_open(fileName, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
+    if (!db) {
+        printf("Error: Failed to create database.\n");
+        exit(1);
     }
 
-    struct User *user = (struct User *) value.dptr;
-
-    printUser(*user);
+    return db;
 }
 
 void insertUser(DBM *db) {
@@ -65,22 +69,30 @@ void insertUser(DBM *db) {
     printf("User inserted successfully.\n");
 }
 
-DBM* createDatabase() {
-    char fileName[30];
-    printf("Enter database filename: ");
-    scanf("%s", fileName);
+void fetchUser(DBM *db) {
+    char firstName[MAX_FIRST_NAME_LENGTH];
 
-    DBM *db = dbm_open(fileName, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
-    if (!db) {
-        printf("Error: Failed to create database.\n");
-        exit(1);
+    printf("Enter first name: ");
+    scanf("%s", firstName);
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = firstName;
+    key.dsize = strlen(firstName) + 1;
+
+    value = dbm_fetch(db, key);
+    if (value.dptr == NULL) {
+        printf("Error: User not found.\n");
     }
 
-    return db;
+    struct User *user = (struct User *) value.dptr;
+
+    printUser(*user);
 }
 
-int main() {
-    DBM* db = createDatabase();
+void optionHandler(DBM* db) {
     char choice;
 
     while (1) {
@@ -104,5 +116,4 @@ int main() {
                 printf("%s", "Invalid selection. Try again.\n");
         }
     }
-    return 0;
 }
