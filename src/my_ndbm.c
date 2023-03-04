@@ -1,35 +1,19 @@
+#include "my_ndbm.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <ndbm.h>
 #include <string.h>
+#include <fcntl.h>
 
-#define MAX_FIRST_NAME_LENGTH 20
-#define MAX_LAST_NAME_LENGTH 30
 
-struct User {
-    char firstName[MAX_FIRST_NAME_LENGTH];
-    char lastName[MAX_LAST_NAME_LENGTH];
-};
-
-void printUser(struct User user);
-DBM* createDatabase();
-void insertUser(DBM *db);
-void fetchUser(DBM *db);
-void optionHandler(DBM* db);
-
-int main() {
-    DBM* db = createDatabase();
-    optionHandler(db);
-
-    return 0;
-}
-
-void printUser(struct User user) {
+void printUser(user_t user)
+{
     printf("First name: %s\n", user.firstName);
     printf("Last name: %s\n", user.lastName);
 }
 
-DBM* createDatabase() {
+DBM* createDatabase(void)
+{
     char fileName[30];
     printf("Enter database filename: ");
     scanf("%s", fileName);
@@ -43,7 +27,8 @@ DBM* createDatabase() {
     return db;
 }
 
-void insertUser(DBM *db) {
+void insertUser(DBM *db)
+{
     struct User user;
 
     printf("Enter first name: ");
@@ -69,7 +54,8 @@ void insertUser(DBM *db) {
     printf("User inserted successfully.\n");
 }
 
-void fetchUser(DBM *db) {
+void fetchUser(DBM *db)
+{
     char firstName[MAX_FIRST_NAME_LENGTH];
 
     printf("Enter first name: ");
@@ -92,11 +78,12 @@ void fetchUser(DBM *db) {
     printUser(*user);
 }
 
-void optionHandler(DBM* db) {
+void optionHandler(DBM* db)
+{
     char choice;
 
     while (1) {
-        fflush(stdin);
+        clean_stdin();
         printf("%s", "[0] - Insert\n"
                      "[1] - Fetch\n"
                      "[x] - Exit\n");
