@@ -23,6 +23,10 @@ void get_ip_str(const struct sockaddr *sa, char *out_str);
  */
 void clear_str(char *str, size_t len);
 
+/**
+ * Clean standard input stream.
+ */
+void clean_stdin(void);
 
 #endif /* CHAT_SERVER_UTIL_H */
 
