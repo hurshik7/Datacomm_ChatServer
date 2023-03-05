@@ -105,6 +105,19 @@ void deleteUser(DBM *db) {
     }
 }
 
+void printAllUsers(DBM *db) {
+    datum key, data;
+    key = dbm_firstkey(db);
+    while (key.dptr != NULL) {
+        data = dbm_fetch(db, key);
+        if (data.dptr != NULL) {
+            struct User *user = (struct User *)data.dptr;
+            printf("First name: %s, Last name: %s\n", user->firstName, user->lastName);
+        }
+        key = dbm_nextkey(db);
+    }
+}
+
 void optionHandler(DBM* db) {
     char choice;
 
@@ -113,6 +126,7 @@ void optionHandler(DBM* db) {
         printf("%s", "[0] - Insert\n"
                      "[1] - Fetch\n"
                      "[2] - Delete\n"
+                     "[3] - Get Records\n"
                      "[x] - Exit\n");
         scanf("%c", &choice);
         switch (choice) {
@@ -124,6 +138,9 @@ void optionHandler(DBM* db) {
                 break;
             case '2':
                 deleteUser(db);
+                break;
+            case '3':
+                printAllUsers(db);
                 break;
             case 'X':
             case 'x':
