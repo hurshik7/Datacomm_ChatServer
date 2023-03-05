@@ -18,6 +18,7 @@ void printUser(struct User user);
 DBM* createDatabase(void);
 void insertUser(DBM *db);
 void fetchUser(DBM *db);
+void deleteUser(DBM *db);
 void optionHandler(DBM* db);
 
 #endif //NDBM_NDBM_H

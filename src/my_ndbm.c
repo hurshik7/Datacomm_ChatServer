@@ -78,14 +78,41 @@ void fetchUser(DBM *db)
     printUser(*user);
 }
 
-void optionHandler(DBM* db)
-{
+void deleteUser(DBM *db) {
+    char firstName[MAX_FIRST_NAME_LENGTH];
+    char lastName[MAX_LAST_NAME_LENGTH];
+
+    printf("Enter the first name of the user to delete: ");
+    scanf("%s", firstName);
+    printf("Enter the last name of the user to delete: ");
+    scanf("%s", lastName);
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = firstName;
+    key.dsize = strlen(firstName) + 1;
+    value = dbm_fetch(db, key);
+    if (value.dptr == NULL) {
+        printf("Error: User not found.\n");
+    }
+
+    if (dbm_delete(db, key) == 0) {
+        printf("Deleted user: %s\n", firstName);
+    } else {
+        printf("Error: Failed to delete record.\n");
+    }
+}
+
+void optionHandler(DBM* db) {
     char choice;
 
     while (1) {
         clean_stdin();
         printf("%s", "[0] - Insert\n"
                      "[1] - Fetch\n"
+                     "[2] - Delete\n"
                      "[x] - Exit\n");
         scanf("%c", &choice);
         switch (choice) {
@@ -95,12 +122,16 @@ void optionHandler(DBM* db)
             case '1':
                 fetchUser(db);
                 break;
+            case '2':
+                deleteUser(db);
+                break;
             case 'X':
             case 'x':
                 dbm_close(db);
                 exit(0);
             default:
                 printf("%s", "Invalid selection. Try again.\n");
+                break;
         }
     }
 }
