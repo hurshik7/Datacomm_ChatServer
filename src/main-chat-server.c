@@ -1,6 +1,7 @@
 #include "error.h"
 #include "logger.h"
 #include "option_handler.h"
+#include "server.h"
 #include "util.h"
 #include <assert.h>
 #include <errno.h>
@@ -110,17 +111,17 @@ int main(int argc, char *argv[]) {
 
                     // data is ready
                     case POLLIN:
-                        n = read(pollfds[i].fd, buf, BUF_SIZE);
-                        if (n < 0) {
-                            perror("read");
+                        // read request
+                        if (handle_request(pollfds[i].fd) < 0) {
                             continue;
                         }
-                        // Send the number of bytes back to the client
-                        assert(n >= 0);
-                        memset(response, 0, RES_BUF_SIZE);
-                        sprintf(response, "%ld", n);
-                        write(pollfds[i].fd, response, strlen(response));
-                        printf("%ld,%s,recv:%s,send:%s\n", ++req_count, client_addrs[i], buf, response);
+
+                        // write response
+//                        assert(n >= 0);
+//                        memset(response, 0, RES_BUF_SIZE);
+//                        sprintf(response, "%ld", n);
+//                        write(pollfds[i].fd, response, strlen(response));
+//                        printf("%ld,%s,recv:%s,send:%s\n", ++req_count, client_addrs[i], buf, response);
 
                      // default, fall-through from POLLIN case
                     default:
