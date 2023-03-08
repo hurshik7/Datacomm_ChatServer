@@ -1,3 +1,4 @@
+#include "my_ndbm.h"
 #include "server.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -13,12 +14,12 @@ int handle_request(int fd)
     memset(&header, 0, sizeof(header));
     result = read_header(fd, &header);
     if (result < 0) {
-        perror("read_header");
+        perror("[SERVER]Error: read_header()");
         return -1;
     }
 
     if (header.version_type.version != CURRENT_VERSION) {
-        perror("wrong version");
+        perror("[SERVER]Error: wrong version");
         return ERROR_WRONG_VERSION;
     }
     /*
@@ -38,14 +39,8 @@ int handle_request(int fd)
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                // TODO read body (info of the user)
-
-                // TODO Find the user in the DB.
-                    // if there is same user in the DB, send error response
-
-                    // else store the user in the db
-
-                // TODO send a response.
+                result = create_user(fd);
+                send_response(fd, OBJECT_USER, TYPE_CREATE, result);
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -53,7 +48,7 @@ int handle_request(int fd)
             } else if (header.version_type.type == TYPE_DESTROY) {
 
             } else {
-                perror("wrong type");
+                perror("[SERVER]Error: wrong type");
                 assert(!"should not be here");
             }
             break;
@@ -68,7 +63,7 @@ int handle_request(int fd)
 
             break;
         default:
-            perror("wrong object number");
+            perror("[SERVER]Error: wrong object number");
             assert(!"This should not be here");
     }
 
@@ -81,16 +76,59 @@ int read_header(int fd, chat_header_t *header_out)
     memset(buffer, 0, DEFUALT_BUFFER);
     ssize_t nread = read(fd, buffer, HEADER_SIZE);
     if (nread < 0) {
-        perror("read() in read_header()");
+        perror("[SERVER]Error: read() in read_header()");
         return -1;
     }
 
     assert(nread == 4);
     int temp_header = 0;
     memcpy(&temp_header, buffer, HEADER_SIZE);
-//    printf("temp_header before ntohl(): %d\n", temp_header);
     temp_header = ntohl(temp_header);
     memcpy(header_out, &temp_header, sizeof(chat_header_t));
+    return 0;
+}
+
+int create_user(int fd)
+{
+    char buffer[DEFUALT_BUFFER];
+    memset(buffer, '\0', DEFUALT_BUFFER);
+    ssize_t nread = read(fd, buffer, DEFUALT_BUFFER);
+    if (nread <= 0) {
+        perror("[SERVER]Error: read body");
+        return -1;
+    }
+
+    char login_token[TOKEN_NAME_LENGTH] = { '\0', };
+    char display_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char password[PSWD_MAX_LENGTH] = { '\0', };
+    char* token = strtok(buffer, "\3");
+
+    user_login_t* login_info = get_login_info_malloc_or_null(token);
+    if (login_info != NULL) {
+        // the user already exist
+        goto error_exit;
+    }
+    assert(login_info == NULL);
+
+    strncpy(login_token, token, strlen(token));
+    token = strtok(NULL, "\3"); // display-name
+    strncpy(display_name, token, strlen(token));
+    token = strtok(NULL, "\3"); // password
+    strncpy(password, token, strlen(token));
+
+    // else store the user in the db (login_info db, user_account db)
+    // TODO Shik is working this part now.
+
+    free(login_info);
+    return 0;
+error_exit:
+    free(login_info);
+    return ERROR_CREATE_USER_ALREADY_EXIST;
+}
+
+int send_response(int fd, int object, int type, int result)
+{
+
     return 0;
 }
 

@@ -20,6 +20,8 @@
 #define OBJECT_MESSAGE (3)
 #define OBJECT_AUTH (4)
 
+#define ERROR_CREATE_USER_ALREADY_EXIST (5)
+
 
 typedef struct version_type {
     uint8_t  version:4;
@@ -35,7 +37,8 @@ typedef struct chat_header {
 
 int handle_request(int fd);
 int read_header(int fd, chat_header_t *header_out);
-
+int create_user(int fd);
+int send_response(int fd, int object, int type, int result);
 
 
 #endif //CHAT_SERVER_SERVER_H
