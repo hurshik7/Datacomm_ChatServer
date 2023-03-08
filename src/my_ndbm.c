@@ -1,32 +1,53 @@
 #include "my_ndbm.h"
 #include "util.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 
 
-void printUser(user_t user)
+DBM* open_db_or_null(const char *db_name)
 {
-    printf("First name: %s\n", user.firstName);
-    printf("Last name: %s\n", user.lastName);
-}
-
-DBM* createDatabase(void)
-{
-    char fileName[30];
-    printf("Enter database filename: ");
-    scanf("%s", fileName);
-
-    DBM *db = dbm_open(fileName, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
+    DBM* db = dbm_open(db_name, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
     if (!db) {
-        printf("Error: Failed to create database.\n");
-        exit(1);
+        perror("[DB]Error: Failed to create database.\n");
+        return NULL;
     }
-
     return db;
 }
 
+user_login_t* get_login_info_malloc_or_null(char* login_token)
+{
+    DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO);
+    if (login_info_db == NULL) {
+        perror("[DB]Error: Failed to open LOGIN_INFO DB");
+        return NULL;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = login_token;
+    key.dsize = strlen(login_token) + 1;
+
+    value = dbm_fetch(login_info_db, key);
+    if (value.dptr == NULL) {
+        perror("[DB]Error: User not found.\n");
+        return NULL;
+    }
+
+    user_login_t* login_info = (user_login_t*) malloc(sizeof(user_login_t));
+    if (login_info == NULL) {
+        perror("[DB]Error: malloc()");
+        return NULL;
+    }
+
+    memcpy(login_info, value.dptr, sizeof(user_login_t));
+    return login_info;
+}
+
+/*
 void insertUser(DBM *db)
 {
     struct User user;
@@ -153,3 +174,4 @@ void optionHandler(DBM* db)
         }
     }
 }
+*/
