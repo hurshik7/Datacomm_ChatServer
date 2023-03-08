@@ -7,6 +7,7 @@
 
 
 #define MAX_IP_ADD_STR_LENGTH (16)
+#define DEFAULT_ARGS (10)
 
 
 /**
@@ -27,6 +28,16 @@ void clear_str(char *str, size_t len);
  * Clean standard input stream.
  */
 void clean_stdin(void);
+
+/**
+ * Tokenize a string. It uses malloc so that the caller should free it.
+ * @param str a string to tokenize
+ * @param delim a string contains delimiters
+ * @param out_count a pointer to unsigned integer which will store the number of tokens
+ * @return an array of strings contains all tokens
+ */
+char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count);
+
 
 #endif /* CHAT_SERVER_UTIL_H */
 
