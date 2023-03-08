@@ -116,13 +116,6 @@ int main(int argc, char *argv[]) {
                             continue;
                         }
 
-                        // write response
-//                        assert(n >= 0);
-//                        memset(response, 0, RES_BUF_SIZE);
-//                        sprintf(response, "%ld", n);
-//                        write(pollfds[i].fd, response, strlen(response));
-//                        printf("%ld,%s,recv:%s,send:%s\n", ++req_count, client_addrs[i], buf, response);
-
                      // default, fall-through from POLLIN case
                     default:
                         close(pollfds[i].fd);
