@@ -40,7 +40,7 @@ int handle_request(int fd, const char* clnt_addr)
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
                 result = read_and_create_user(fd, token);
-                send_create_user_response(fd, header, result, token);
+                send_create_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -187,7 +187,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-int send_create_user_response(int fd, chat_header_t header, int result, const char* token)
+int send_create_user_response(int fd, chat_header_t header, int result, const char* token, char* clnt_addr)
 {
     char body[DEFUALT_BUFFER] = { '\0', };
     if (result == 0) {
@@ -217,6 +217,7 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
+    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     return 0;
 }
 

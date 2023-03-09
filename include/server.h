@@ -43,7 +43,7 @@ int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH]);
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
-int send_create_user_response(int fd, chat_header_t header, int result, const char* token);
+int send_create_user_response(int fd, chat_header_t header, int result, const char* token, char* clnt_addr);
 
 
 #endif //CHAT_SERVER_SERVER_H
