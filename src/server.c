@@ -212,14 +212,16 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         }
     }
     header.body_size = strlen(body);
-    int header_int;
+    uint16_t body_size = header.body_size;
+    header.body_size = htons(header.body_size);
+    uint32_t header_int;
     memcpy(&header_int, &header, sizeof(chat_header_t));
     header_int = htonl(header_int);
     if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
     }
-    if (write(fd, body, header.body_size) < 0) {
+    if (write(fd, body, body_size) < 0) {
         perror("send body (send_create_user_response)");
         return -1;
     }
