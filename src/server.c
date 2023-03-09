@@ -80,7 +80,7 @@ int read_header(int fd, chat_header_t *header_out)
         return -1;
     }
 
-    assert(nread == 4);
+    assert(nread == HEADER_SIZE);
     int temp_header = 0;
     memcpy(&temp_header, buffer, HEADER_SIZE);
     temp_header = ntohl(temp_header);
@@ -101,10 +101,13 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char display_name[TOKEN_NAME_LENGTH] = { '\0', };
     char password[PSWD_MAX_LENGTH] = { '\0', };
-    char* token = strtok(buffer, "\3");
+    char* token = strtok(buffer, "\3"); // login_token
+    strncpy(login_token, token, strlen(token));
+    token = strtok(NULL, "\3"); // display-name
+    strncpy(display_name, token, strlen(token));
 
     bool is_token_duplicate = false;
-    user_login_t* login_info = get_login_info_malloc_or_null(token);
+    user_login_t* login_info = get_login_info_malloc_or_null(login_token);
     bool is_display_name_duplicates = check_duplicate_display_name(display_name);
     if (login_info != NULL) {
         // the user already exist
@@ -121,11 +124,8 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
         goto error_exit_duplicate_display_name;
     }
     assert(is_token_duplicate == false && is_display_name_duplicates == false);
-    assert(login_info != NULL);
+    assert(login_info == NULL);
 
-    strncpy(login_token, token, strlen(token));
-    token = strtok(NULL, "\3"); // display-name
-    strncpy(display_name, token, strlen(token));
     token = strtok(NULL, "\3"); // password
     strncpy(password, token, strlen(token));
 
