@@ -1,6 +1,10 @@
 #include "util.h"
 #include <string.h>
 #include <stdio.h>
+#include <uuid/uuid.h>
+
+
+#define UUID_LEN (37)
 
 
 #pragma GCC diagnostic push
@@ -88,4 +92,16 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     return ret;
 }
 
+char* generate_random_uuid_malloc()
+{
+    uuid_t bin_uuid;
+    uuid_generate_random(bin_uuid);
+    char* uuid = (char*) malloc(UUID_LEN);
+    if (uuid == NULL) {
+        return NULL;
+    }
+
+    uuid_unparse_upper(bin_uuid, uuid);
+    return uuid;
+}
 
