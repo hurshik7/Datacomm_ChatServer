@@ -2,6 +2,7 @@
 #define CHAT_SERVER_SERVER_H
 
 
+#include "my_ndbm.h"
 #include <stdint.h>
 
 
@@ -20,7 +21,9 @@
 #define OBJECT_MESSAGE (3)
 #define OBJECT_AUTH (4)
 
-#define ERROR_CREATE_USER_ALREADY_EXIST (5)
+#define ERROR_CREATE_USER_DUPLICATE_ALL (11)
+#define ERROR_CREATE_USER_DUPLICATE_TOKEN (12)
+#define ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME (13)
 
 
 typedef struct version_type {
@@ -35,9 +38,11 @@ typedef struct chat_header {
 } chat_header_t;
 
 
-int handle_request(int fd);
+int handle_request(int fd, const char* clnt_addr);
 int read_header(int fd, chat_header_t *header_out);
-int create_user(int fd);
+int read_and_create_user(int fd);
+user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
+user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
 int send_response(int fd, int object, int type, int result);
 
 

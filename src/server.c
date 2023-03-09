@@ -1,5 +1,6 @@
 #include "my_ndbm.h"
 #include "server.h"
+#include "util.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,7 +8,7 @@
 #include <unistd.h>
 
 
-int handle_request(int fd)
+int handle_request(int fd, const char* clnt_addr)
 {
     int result;
     chat_header_t header;
@@ -39,7 +40,7 @@ int handle_request(int fd)
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                result = create_user(fd);
+                result = read_and_create_user(fd);
                 send_response(fd, OBJECT_USER, TYPE_CREATE, result);
             } else if (header.version_type.type == TYPE_READ) {
 
@@ -88,7 +89,7 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
-int create_user(int fd)
+int read_and_create_user(int fd)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -103,12 +104,25 @@ int create_user(int fd)
     char password[PSWD_MAX_LENGTH] = { '\0', };
     char* token = strtok(buffer, "\3");
 
+    bool is_token_duplicate = false;
     user_login_t* login_info = get_login_info_malloc_or_null(token);
+    bool is_display_name_duplicates = check_duplicate_display_name(display_name);
     if (login_info != NULL) {
         // the user already exist
-        goto error_exit;
+        is_token_duplicate = true;
     }
-    assert(login_info == NULL);
+
+    if (is_token_duplicate == true && is_display_name_duplicates == true) {
+        goto error_exit_duplicate_token_and_name;
+    }
+    if (is_token_duplicate == true) {
+        goto error_exit_duplicate_login_token;
+    }
+    if (is_display_name_duplicates == true) {
+        goto error_exit_duplicate_display_name;
+    }
+    assert(is_token_duplicate == false && is_display_name_duplicates == false);
+    assert(login_info != NULL);
 
     strncpy(login_token, token, strlen(token));
     token = strtok(NULL, "\3"); // display-name
@@ -116,14 +130,61 @@ int create_user(int fd)
     token = strtok(NULL, "\3"); // password
     strncpy(password, token, strlen(token));
 
-    // else store the user in the db (login_info db, user_account db)
-    // TODO Shik is working this part now.
+    //  store the user in the db (login_info db, user_account db, and also display_name db)
+    char* user_uuid_malloc = generate_random_uuid_malloc();
+    if (user_uuid_malloc != NULL) {
+        insert_display_name(display_name, user_uuid_malloc);
+    }
+    user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
+    if (user_login != NULL) {
+        insert_user_login(user_login);
+    }
+    user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name);
+    if (user_account != NULL) {
+        insert_user_account(user_account);
+    }
 
+    free(user_account);
+    free(user_login);
+    free(user_uuid_malloc);
     free(login_info);
     return 0;
-error_exit:
+error_exit_duplicate_token_and_name:
     free(login_info);
-    return ERROR_CREATE_USER_ALREADY_EXIST;
+    return ERROR_CREATE_USER_DUPLICATE_ALL;
+error_exit_duplicate_login_token:
+    free(login_info);
+    return ERROR_CREATE_USER_DUPLICATE_TOKEN;
+error_exit_duplicate_display_name:
+    free(login_info);
+    return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
+}
+
+user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
+{
+    user_login_t* user_login = (user_login_t*) malloc(sizeof(user_login_t));
+    if (user_login == NULL) {
+        perror("generate user_login_t");
+        return NULL;
+    }
+    memset(user_login, 0, sizeof(user_login_t));
+    strncpy(user_login->login_token, login_token, TOKEN_NAME_LENGTH);
+    strncpy(user_login->password, password, PSWD_MAX_LENGTH);
+    strncpy(user_login->uuid, user_id, UUID_LEN);
+    return user_login;
+}
+
+user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name)
+{
+    user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
+    if (user_account == NULL) {
+        perror("generate user_account_t");
+        return NULL;
+    }
+    memset(user_account, 0, sizeof(user_account_t));
+    strncpy(user_account->user_id, uuid, UUID_LEN);
+    strncpy(user_account->display_name, display_name, TOKEN_NAME_LENGTH);
+    return user_account;
 }
 
 int send_response(int fd, int object, int type, int result)
