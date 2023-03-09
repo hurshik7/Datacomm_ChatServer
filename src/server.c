@@ -34,14 +34,13 @@ int handle_request(int fd, const char* clnt_addr)
      */
 
     assert(header.version_type.version == CURRENT_VERSION);
-    // TODO do server based on request, read body if it needs to
-    char body_buffer[DEFUALT_BUFFER];
-    memset(body_buffer, '\0', sizeof(body_buffer));
+    // do server base on request, read body if it needs to
+    char token[TOKEN_NAME_LENGTH] = { '\0', };
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_user(fd);
-                send_response(fd, OBJECT_USER, TYPE_CREATE, result);
+                result = read_and_create_user(fd, token);
+                send_create_user_response(fd, header, result, token);
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -89,7 +88,7 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
-int read_and_create_user(int fd)
+int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -143,6 +142,7 @@ int read_and_create_user(int fd)
     if (user_account != NULL) {
         insert_user_account(user_account);
     }
+    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
     free(user_account);
     free(user_login);
@@ -187,9 +187,36 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-int send_response(int fd, int object, int type, int result)
+int send_create_user_response(int fd, chat_header_t header, int result, const char* token)
 {
-
+    char body[DEFUALT_BUFFER] = { '\0', };
+    if (result == 0) {
+        strcpy(body, "201\3\0");
+        strcat(body, token);
+    } else {
+        sprintf(body, "409\3%d\3", result);
+        if (result == ERROR_CREATE_USER_DUPLICATE_TOKEN) {
+            strcat(body, "Login Token was not unique");
+        } else if (result == ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME) {
+            strcat(body, "Display Name was not unique");
+        } else if (result == ERROR_CREATE_USER_DUPLICATE_ALL) {
+            strcat(body, "Login Token and Display name both were not unique");
+        } else {
+            assert(!"should not be here");
+        }
+    }
+    header.body_size = strlen(body);
+    int header_int;
+    memcpy(&header_int, &header, sizeof(chat_header_t));
+    header_int = htonl(header_int);
+    if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
+        perror("send header (send_create_user_response)");
+        return -1;
+    }
+    if (write(fd, body, header.body_size) < 0) {
+        perror("send body (send_create_user_response)");
+        return -1;
+    }
     return 0;
 }
 
