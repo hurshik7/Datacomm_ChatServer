@@ -62,10 +62,11 @@ int main(int argc, char const *argv[]) {
 
     char body[] = "shikhur\3shik\3hur123\0";
     test_header.body_size = (uint16_t) strlen(body);
+    uint16_t body_size = test_header.body_size;
+    test_header.body_size = htons(test_header.body_size);
 
     uint32_t temp_int = 0;
     memcpy(&temp_int, &test_header, sizeof(test_header));
-    temp_int = htonl(temp_int);
 //    printf("temp_int: %d\n", temp_int);
 //    temp_int = htonl(temp_int);
 //    printf("temp_int after htonl(): %d\n", temp_int);
@@ -74,7 +75,7 @@ int main(int argc, char const *argv[]) {
         perror("send");
     }
 
-    if (send(client_socket, body, test_header.body_size, 0) < 0) {
+    if (send(client_socket, body, body_size, 0) < 0) {
         perror("send");
     }
 

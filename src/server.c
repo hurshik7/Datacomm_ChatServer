@@ -72,19 +72,25 @@ int handle_request(int fd, const char* clnt_addr)
 
 int read_header(int fd, chat_header_t *header_out)
 {
-    char buffer[DEFUALT_BUFFER];
-    memset(buffer, 0, DEFUALT_BUFFER);
-    ssize_t nread = read(fd, buffer, HEADER_SIZE);
+    ssize_t nread = read(fd, &header_out->version_type, 1);
     if (nread < 0) {
-        perror("[SERVER]Error: read() in read_header()");
+        perror("[SERVER]Error: read() in read_header(), reading version_type");
         return -1;
     }
 
-    assert(nread == HEADER_SIZE);
-    int temp_header = 0;
-    memcpy(&temp_header, buffer, HEADER_SIZE);
-    temp_header = ntohl(temp_header);
-    memcpy(header_out, &temp_header, sizeof(chat_header_t));
+    nread = read(fd, &header_out->object, 1);
+    if (nread < 0) {
+        perror("[SERVER]Error: read() in read_header(), object");
+        return -1;
+    }
+
+    nread = read(fd, &header_out->body_size, 2);
+    if (nread < 0) {
+        perror("[SERVER]Error: read() in read_header(), body_size");
+        return -1;
+    }
+
+    header_out->body_size = ntohs(header_out->body_size);
     return 0;
 }
 
