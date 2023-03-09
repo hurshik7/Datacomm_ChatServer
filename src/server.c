@@ -23,15 +23,6 @@ int handle_request(int fd, const char* clnt_addr)
         perror("[SERVER]Error: wrong version");
         return ERROR_WRONG_VERSION;
     }
-    /*
-    {
-        // for testing read_header
-        printf("version: %d\n", header.version_type.version);
-        printf("type: %d\n", header.version_type.type);
-        printf("object: %d\n", header.object);
-        printf("body_size: %d\n", header.body_size);
-    }
-     */
 
     assert(header.version_type.version == CURRENT_VERSION);
     // do server base on request, read body if it needs to
@@ -193,7 +184,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-int send_create_user_response(int fd, chat_header_t header, int result, const char* token, char* clnt_addr)
+int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFUALT_BUFFER] = { '\0', };
     if (result == 0) {
