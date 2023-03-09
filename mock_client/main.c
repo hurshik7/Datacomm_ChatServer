@@ -82,7 +82,6 @@ int main(int argc, char const *argv[]) {
     if (read(client_socket, buffer, sizeof(test_header)) < 0) {
         perror("read");
     }
-    printf("res: %s\n", buffer);
     memset(buffer, '\0', DEFUALT_BUFFER);
     if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
         perror("recv");
