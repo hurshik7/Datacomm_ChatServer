@@ -1,12 +1,11 @@
 #include "my_ndbm.h"
-#include "util.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
-DBM* open_db_or_null(const char *db_name)
+DBM* open_db_or_null(const char* db_name)
 {
     DBM* db = dbm_open(db_name, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
     if (!db) {
@@ -33,19 +32,129 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
 
     value = dbm_fetch(login_info_db, key);
     if (value.dptr == NULL) {
+        dbm_close(login_info_db);
         perror("[DB]Error: User not found.\n");
         return NULL;
     }
 
     user_login_t* login_info = (user_login_t*) malloc(sizeof(user_login_t));
     if (login_info == NULL) {
+        dbm_close(login_info_db);
         perror("[DB]Error: malloc()");
         return NULL;
     }
 
     memcpy(login_info, value.dptr, sizeof(user_login_t));
+    dbm_close(login_info_db);
     return login_info;
 }
+
+bool check_duplicate_display_name(char* display_name)
+{
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES);
+    if (display_names == NULL) {
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        return false;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = display_name;
+    key.dsize = strlen(display_name);
+
+    value = dbm_fetch(display_names, key);
+    if (value.dptr == NULL) {
+        dbm_close(display_names);
+        return false;
+    }
+
+    dbm_close(display_names);
+    return true;
+}
+
+int insert_user_account(user_account_t* user_account)
+{
+    DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT);
+    if (user_accounts == NULL) {
+        perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_account->user_id;
+    key.dsize = strlen(user_account->user_id);
+    value.dptr = user_account;
+    value.dsize = sizeof(user_account_t);
+
+    if (dbm_store(user_accounts, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert user account\n");
+        dbm_close(user_accounts);
+        return -1;
+    }
+
+    dbm_close(user_accounts);
+    return 0;
+}
+
+int insert_display_name(char* display_name, char* uuid)
+{
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES);
+    if (display_names == NULL) {
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = display_name;
+    key.dsize = strlen(display_name);
+    value.dptr = uuid;
+    value.dsize = strlen(uuid);
+
+    if (dbm_store(display_names, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert display_name\n");
+        dbm_close(display_names);
+        return -1;
+    }
+
+    dbm_close(display_names);
+    return 0;
+}
+
+int insert_user_login(user_login_t* user_login)
+{
+    DBM* user_logins = open_db_or_null(DB_LOGIN_INFO);
+    if (user_logins == NULL) {
+        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_login->login_token;
+    key.dsize = strlen(user_login->login_token);
+    value.dptr = user_login;
+    value.dsize = sizeof(user_login_t);
+
+    if (dbm_store(user_logins, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert user login information\n");
+        dbm_close(user_logins);
+        return -1;
+    }
+
+    dbm_close(user_logins);
+    return 0;
+}
+
 
 /*
 void insertUser(DBM *db)
