@@ -71,26 +71,28 @@ int main(int argc, char const *argv[]) {
 //    temp_int = htonl(temp_int);
 //    printf("temp_int after htonl(): %d\n", temp_int);
 
-    if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
-        perror("send");
-    }
+    while (1) {
+        if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            perror("send");
+        }
 
-    if (send(client_socket, body, body_size, 0) < 0) {
-        perror("send");
-    }
+        if (send(client_socket, body, body_size, 0) < 0) {
+            perror("send");
+        }
 
-    char buffer[DEFUALT_BUFFER];
-    if (read(client_socket, buffer, sizeof(test_header)) < 0) {
-        perror("read");
+        char buffer[DEFUALT_BUFFER];
+        if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+            perror("read");
+        }
+        memset(buffer, '\0', DEFUALT_BUFFER);
+        if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+            perror("recv");
+        }
+        printf("res: %s\n", buffer);
+        sleep(5);
     }
-    memset(buffer, '\0', DEFUALT_BUFFER);
-    if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
-        perror("recv");
-    }
-    printf("res: %s\n", buffer);
     // close the file and the socket.
     //close(client_socket);
-
     return 0;
 }
 
