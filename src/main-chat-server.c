@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
                     // data is ready
                     case POLLIN:
                         // read request
-                        if (handle_request(pollfds[i].fd) != 0) {
+                        if (handle_request(pollfds[i].fd, client_addrs[i]) != 0) {
                             continue;
                         }
 
