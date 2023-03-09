@@ -53,25 +53,41 @@ int main(int argc, char const *argv[]) {
     chat_header_t test_header;
     memset(&test_header, 0, sizeof(chat_header_t));
     test_header.version_type.version = 1;
-    test_header.version_type.type = 2;
-    test_header.object = 3;
-    test_header.body_size = 10;
+    test_header.version_type.type = 1;
+    test_header.object = 1;
     // for testing read_header
     printf("version: %d\n", test_header.version_type.version);
     printf("type: %d\n", test_header.version_type.type);
     printf("object: %d\n", test_header.object);
-    printf("body_size: %d\n", test_header.body_size);
+
+    char body[] = "shikhur\3shik\3hur123\0";
+    test_header.body_size = (uint16_t) strlen(body);
 
     uint32_t temp_int = 0;
     memcpy(&temp_int, &test_header, sizeof(test_header));
-    printf("temp_int: %d\n", temp_int);
     temp_int = htonl(temp_int);
-    printf("temp_int after htonl(): %d\n", temp_int);
+//    printf("temp_int: %d\n", temp_int);
+//    temp_int = htonl(temp_int);
+//    printf("temp_int after htonl(): %d\n", temp_int);
 
     if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
         perror("send");
     }
 
+    if (send(client_socket, body, test_header.body_size, 0) < 0) {
+        perror("send");
+    }
+
+    char buffer[DEFUALT_BUFFER];
+    if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+        perror("read");
+    }
+    printf("res: %s\n", buffer);
+    memset(buffer, '\0', DEFUALT_BUFFER);
+    if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+        perror("recv");
+    }
+    printf("res: %s\n", buffer);
     // close the file and the socket.
     //close(client_socket);
 
