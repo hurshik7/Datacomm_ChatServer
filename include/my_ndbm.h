@@ -18,7 +18,6 @@
 #define DB_USER_ACCOUNT "user_account_info"
 
 
-
 typedef struct UserLoginInfo {
     char login_token[TOKEN_NAME_LENGTH];
     char password[PSWD_MAX_LENGTH];
