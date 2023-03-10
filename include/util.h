@@ -39,7 +39,7 @@ void clean_stdin(void);
 char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count);
 
 
-char* generate_random_uuid_malloc();
+char* generate_random_uuid_malloc(void);
 
 
 #endif /* CHAT_SERVER_UTIL_H */

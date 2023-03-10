@@ -1,9 +1,7 @@
 #include "error.h"
-#include "logger.h"
 #include "option_handler.h"
 #include "server.h"
 #include "util.h"
-#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,21 +12,15 @@
 
 #define BACKLOG (5)
 #define MAX_CLIENTS (255)
-#define BUF_SIZE 2048
-#define RES_BUF_SIZE (64)
 
 
 static void init_pollfd(struct pollfd* pollfds, int server_sock);
 
 
 int main(int argc, char *argv[]) {
-    long req_count = 0;
-    char buf[BUF_SIZE] = { '\0', };
-    ssize_t n;
     struct sockaddr_in client_addr;
     int option;
     socklen_t socket_len;
-    char response[RES_BUF_SIZE];
     char client_addrs[MAX_CLIENTS][MAX_IP_ADD_STR_LENGTH];
     memset(client_addrs, 0, MAX_CLIENTS * MAX_IP_ADD_STR_LENGTH);
 

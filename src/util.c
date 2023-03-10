@@ -48,7 +48,7 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     size_t str_length = strlen(str);
     size_t word_count = 0;
     size_t ret_size = DEFAULT_ARGS;
-    size_t word_length = 0;
+    size_t word_length;
     char** ret;
     void* temp = NULL;
 
@@ -92,7 +92,7 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     return ret;
 }
 
-char* generate_random_uuid_malloc()
+char* generate_random_uuid_malloc(void)
 {
     uuid_t bin_uuid;
     uuid_generate_random(bin_uuid);
