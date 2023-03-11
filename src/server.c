@@ -143,7 +143,6 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     if (user_uuid_malloc != NULL) {
         insert_display_name(display_name, user_uuid_malloc);
     }
-    // TODO HERE
     user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
     if (user_login != NULL) {
         insert_user_login(user_login);
@@ -208,11 +207,11 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
      || compare_strings(login_info->login_token, login_token) == true));
     assert(login_info != NULL);
 
-    // TODO PROBLEM HERE
+    // store uuid and remove extra char at end of uuid string
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
-    clnt_uuid[strlen(clnt_uuid)] = '\0';
-    printf("%s\n", clnt_uuid);
+    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
+    printf("clnt_uuid val: %s\n", clnt_uuid);
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
     if (user_account != NULL) {
@@ -271,8 +270,9 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, char
     }
     memset(user_account, 0, sizeof(user_account_t));
     strncpy((char*)&user_account->sock_addr, clnt_addr, sizeof(&clnt_addr) + 1);
-    strncpy((char *) user_account->online_status, (const char *) online, strlen(online));
-    strncpy((char *) user_account->privilege_level, (const char *) online, strlen(privilege));
+    // TODO PROBLEM HERE
+//    strncpy((char *) user_account->online_status, (const char *) online, strlen(online));
+//    strncpy((char *) user_account->privilege_level, (const char *) online, strlen(privilege));
     return user_account;
 }
 

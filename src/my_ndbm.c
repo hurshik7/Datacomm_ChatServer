@@ -55,7 +55,7 @@ user_account_t* get_user_account_malloc_or_null(char* user_token)
     if (user_acc_db == NULL) {
         return NULL;
     }
-
+    printf("from get_user_malloc_or_null: %s\n", user_token);
     datum key, value;
     memset(&key, 0, sizeof(datum));
     memset(&value, 0, sizeof(datum));
