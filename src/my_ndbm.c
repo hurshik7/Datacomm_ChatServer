@@ -49,6 +49,39 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     return login_info;
 }
 
+user_account_t* get_user_account_malloc_or_null(char* user_token)
+{
+    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT, O_RDONLY | O_SYNC);
+    if (user_acc_db == NULL) {
+        return NULL;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_token;
+    key.dsize = strlen(user_token);
+
+    value = dbm_fetch(user_acc_db, key);
+    if (value.dptr == NULL) {
+        dbm_close(user_acc_db);
+        perror("[DB]Error: User not found.");
+        return NULL;
+    }
+
+    user_account_t* user_acc = (user_account_t*) malloc(sizeof(user_account_t));
+    if (user_acc == NULL) {
+        dbm_close(user_acc_db);
+        perror("[DB]Error: malloc()");
+        return NULL;
+    }
+
+    memcpy(user_acc, value.dptr, sizeof(user_login_t));
+    dbm_close(user_acc_db);
+    return user_acc;
+}
+
 bool check_duplicate_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES, O_RDONLY | O_SYNC);

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <uuid/uuid.h>
+#include <ctype.h>
 
 
 #define UUID_LEN (37)
@@ -104,4 +105,31 @@ char* generate_random_uuid_malloc(void)
     uuid_unparse_upper(bin_uuid, uuid);
     return uuid;
 }
+
+bool compare_strings(const char* str1, const char* str2) {
+    int i = 0, j = 0;
+    while (str1[i] != '\0' && str2[j] != '\0') {
+        if (isspace(str1[i])) {
+            i++;
+            continue;
+        }
+        if (isspace(str2[j])) {
+            j++;
+            continue;
+        }
+        if (str1[i] != str2[j]) {
+            return false;
+        }
+        i++;
+        j++;
+    }
+    while (isspace(str1[i])) {
+        i++;
+    }
+    while (isspace(str2[j])) {
+        j++;
+    }
+    return str1[i] == '\0' && str2[j] == '\0';
+}
+
 
