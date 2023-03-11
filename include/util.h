@@ -4,6 +4,7 @@
 
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 #define MAX_IP_ADD_STR_LENGTH (16)
@@ -40,6 +41,9 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count);
 
 
 char* generate_random_uuid_malloc(void);
+
+
+bool compare_strings(const char* str1, const char* str2);
 
 
 #endif /* CHAT_SERVER_UTIL_H */
