@@ -30,7 +30,7 @@ int handle_request(int fd, const char* clnt_addr)
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_user(fd, token, clnt_addr);
+                result = read_and_create_user(fd, token);
                 send_create_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
@@ -97,7 +97,7 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
-int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_addr)
+int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -144,12 +144,11 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_a
         insert_display_name(display_name, user_uuid_malloc);
     }
     // TODO HERE
-    user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc,
-                                                                  clnt_addr);
+    user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
     if (user_login != NULL) {
         insert_user_login(user_login);
     }
-    user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name, clnt_addr);
+    user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name);
     if (user_account != NULL) {
         insert_user_account(user_account);
     }
@@ -233,8 +232,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
     return ERROR_LOGIN_INVALID_CREDENTIALS;
 }
 
-user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id,
-                                                 char* clnt_addr)
+user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
 {
     user_login_t* user_login = (user_login_t*) malloc(sizeof(user_login_t));
     user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
@@ -249,7 +247,7 @@ user_login_t* generate_user_login_malloc_or_null(const char* login_token, const 
     return user_login;
 }
 
-user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name, char* clnt_addr)
+user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name)
 {
     user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
     if (user_account == NULL) {
