@@ -35,6 +35,7 @@ typedef struct UserAccountInfo {
 
 DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
+user_account_t* get_user_account_malloc_or_null(char* user_token);
 bool check_duplicate_display_name(char* display_name);
 int insert_user_account(user_account_t* user_account);
 int insert_display_name(char* display_name, char* uuid);
