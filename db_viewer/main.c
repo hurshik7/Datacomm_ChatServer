@@ -3,12 +3,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
 
 
 #define TOKEN_NAME_LENGTH (20)
 #define PSWD_MAX_LENGTH (30)
 #define UUID_LEN (37)
-
+#define MAX_IP_ADD_STR_LENGTH (16)
 
 #define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
 #define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
@@ -32,6 +34,7 @@ typedef struct UserAccountInfo {
 void printAllUserAccounts(DBM *db);
 void printAllDisplayNames(DBM *db);
 void printAllLoginInfos(DBM *db);
+void get_ip_str(const struct sockaddr *sa, char *out_str);
 
 int main(int argc, char* argv[])
 {
@@ -64,7 +67,8 @@ void printAllUserAccounts(DBM *db)
         data = dbm_fetch(db, key);
         if (data.dptr != NULL) {
             struct UserAccountInfo* user = (struct UserAccountInfo *)data.dptr;
-            printf("%s, %s, %d, %d\n", user->user_id, user->display_name, user->online_status, user->privilege_level);
+//            printf("%s, %s, %d, %d\n", user->user_id, user->display_name, user->online_status, user->privilege_level);
+            printf("%s, %s, %s\n", user->user_id, user->display_name, (char*)&user->sock_addr.sin_addr);
         }
         key = dbm_nextkey(db);
     }
@@ -95,6 +99,21 @@ void printAllLoginInfos(DBM *db)
             printf("%s, %s, %s\n", user->login_token, user->password, user->uuid);
         }
         key = dbm_nextkey(db);
+    }
+}
+
+void get_ip_str(const struct sockaddr *sa, char *out_str)
+{
+    switch(sa->sa_family) {
+        case AF_INET:
+            inet_ntop(AF_INET, &(((const struct sockaddr_in*)sa)->sin_addr), out_str, MAX_IP_ADD_STR_LENGTH);  // NOLINT(clang-diagnostic-cast-align)
+            break;
+        case AF_INET6:
+            inet_ntop(AF_INET6, &(((const struct sockaddr_in6 *)sa)->sin6_addr), out_str, MAX_IP_ADD_STR_LENGTH); // NOLINT(clang-diagnostic-cast-align)
+            break;
+        default:
+            strncpy(out_str, "Unknown AF", MAX_IP_ADD_STR_LENGTH);
+            out_str[MAX_IP_ADD_STR_LENGTH - 1] = '\0';
     }
 }
 
