@@ -54,7 +54,6 @@ int handle_request(int fd, const char* clnt_addr)
             if (header.version_type.type == TYPE_CREATE) {
                 result = read_and_login_user(fd, token, clnt_addr);
                 send_login_user_response(fd, header, result, token, clnt_addr);
-
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -63,7 +62,6 @@ int handle_request(int fd, const char* clnt_addr)
                 perror("[SERVER]Error: wrong type");
                 assert(!"should not be here");
             }
-            break;
             break;
         default:
             perror("[SERVER]Error: wrong object number");
@@ -169,7 +167,7 @@ error_exit_duplicate_display_name:
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
-int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_addr)
+int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -234,7 +232,6 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
 {
     user_login_t* user_login = (user_login_t*) malloc(sizeof(user_login_t));
-    user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
     if (user_login == NULL) {
         perror("generate user_login_t");
         return NULL;
@@ -262,7 +259,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, char* clnt_addr)
+user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr)
 {
     if (user_acc == NULL) {
         perror("fetch user_account_t");
