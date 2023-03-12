@@ -11,6 +11,7 @@
 #define TOKEN_NAME_LENGTH (20)
 #define PSWD_MAX_LENGTH (30)
 #define UUID_LEN (37)
+#define CLNT_IP_ADDR_LENGTH (16)
 
 
 #define DB_LOGIN_INFO "user_login_info"

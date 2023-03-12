@@ -55,7 +55,6 @@ user_account_t* get_user_account_malloc_or_null(char* user_token)
     if (user_acc_db == NULL) {
         return NULL;
     }
-
     datum key, value;
     memset(&key, 0, sizeof(datum));
     memset(&value, 0, sizeof(datum));

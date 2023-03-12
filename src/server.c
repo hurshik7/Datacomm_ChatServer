@@ -143,7 +143,6 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     if (user_uuid_malloc != NULL) {
         insert_display_name(display_name, user_uuid_malloc);
     }
-    // TODO HERE
     user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
     if (user_login != NULL) {
         insert_user_login(user_login);
@@ -208,15 +207,15 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
      || compare_strings(login_info->login_token, login_token) == true));
     assert(login_info != NULL);
 
-    // TODO PROBLEM HERE
+    // store uuid and remove extra char at end of uuid string
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
-    clnt_uuid[strlen(clnt_uuid)] = '\0';
-    printf("%s\n", clnt_uuid);
+    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
     if (user_account != NULL) {
         login_user_account_malloc_or_null(user_account, clnt_addr);
+        insert_user_account(user_account);
     }
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
@@ -257,23 +256,25 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     memset(user_account, 0, sizeof(user_account_t));
     strncpy(user_account->user_id, uuid, UUID_LEN);
     strncpy(user_account->display_name, display_name, TOKEN_NAME_LENGTH);
+    strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
+    user_account->online_status = 0;
+    user_account->privilege_level = 0;
     return user_account;
 }
 
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, char* clnt_addr)
 {
-    const char* online = "1";
-    const char* privilege = "0";
-    user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
-    if (user_account == NULL) {
-        perror("generate user_account_t");
+    if (user_acc == NULL) {
+        perror("fetch user_account_t");
         return NULL;
     }
-    memset(user_account, 0, sizeof(user_account_t));
-    strncpy((char*)&user_account->sock_addr, clnt_addr, sizeof(&clnt_addr) + 1);
-    strncpy((char *) user_account->online_status, (const char *) online, strlen(online));
-    strncpy((char *) user_account->privilege_level, (const char *) online, strlen(privilege));
-    return user_account;
+    strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
+    printf("stored value: %s\n", (char*)&user_acc->sock_addr);
+    printf("param value: %s\n", clnt_addr);
+    // TODO PROBLEM HERE
+    user_acc->online_status = true;
+    user_acc->privilege_level = 0;
+    return user_acc;
 }
 
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
