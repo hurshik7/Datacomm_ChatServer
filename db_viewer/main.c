@@ -67,8 +67,8 @@ void printAllUserAccounts(DBM *db)
         data = dbm_fetch(db, key);
         if (data.dptr != NULL) {
             struct UserAccountInfo* user = (struct UserAccountInfo *)data.dptr;
-//            printf("%s, %s, %d, %d\n", user->user_id, user->display_name, user->online_status, user->privilege_level);
-            printf("%s, %s, %s\n", user->user_id, user->display_name, (char*)&user->sock_addr.sin_addr);
+            printf("%s, %s, %s, %d, %d\n", user->user_id, user->display_name,
+                   (char*)&user->sock_addr.sin_addr, user->online_status, user->privilege_level);
         }
         key = dbm_nextkey(db);
     }

@@ -216,6 +216,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
     if (user_account != NULL) {
         login_user_account_malloc_or_null(user_account, clnt_addr);
+        insert_user_account(user_account);
     }
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
@@ -256,24 +257,23 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     memset(user_account, 0, sizeof(user_account_t));
     strncpy(user_account->user_id, uuid, UUID_LEN);
     strncpy(user_account->display_name, display_name, TOKEN_NAME_LENGTH);
+    strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
+    user_account->online_status = 0;
+    user_account->privilege_level = 0;
     return user_account;
 }
 
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, char* clnt_addr)
 {
-    const char* online = "1";
-    const char* privilege = "0";
-    user_account_t* user_account = (user_account_t*) malloc(sizeof(user_account_t));
-    if (user_account == NULL) {
-        perror("generate user_account_t");
+    if (user_acc == NULL) {
+        perror("fetch user_account_t");
         return NULL;
     }
-    memset(user_account, 0, sizeof(user_account_t));
-    strncpy((char*)&user_account->sock_addr, clnt_addr, sizeof(&clnt_addr) + 1);
+    strncpy((char*)&user_acc->sock_addr, clnt_addr, sizeof(&clnt_addr) + 1);
     // TODO PROBLEM HERE
-//    strncpy((char *) user_account->online_status, (const char *) online, strlen(online));
-//    strncpy((char *) user_account->privilege_level, (const char *) online, strlen(privilege));
-    return user_account;
+    user_acc->online_status = true;
+    user_acc->privilege_level = 0;
+    return user_acc;
 }
 
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
