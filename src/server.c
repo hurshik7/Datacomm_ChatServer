@@ -211,7 +211,6 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], char* clnt_ad
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
     clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
-    printf("clnt_uuid val: %s\n", clnt_uuid);
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
     if (user_account != NULL) {
@@ -269,7 +268,9 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, char
         perror("fetch user_account_t");
         return NULL;
     }
-    strncpy((char*)&user_acc->sock_addr, clnt_addr, sizeof(&clnt_addr) + 1);
+    strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
+    printf("stored value: %s\n", (char*)&user_acc->sock_addr);
+    printf("param value: %s\n", clnt_addr);
     // TODO PROBLEM HERE
     user_acc->online_status = true;
     user_acc->privilege_level = 0;
