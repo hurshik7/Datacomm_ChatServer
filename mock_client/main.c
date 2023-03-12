@@ -1,10 +1,8 @@
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 
@@ -30,8 +28,6 @@ int main(int argc, char const *argv[]) {
 
     int client_socket;
     struct sockaddr_in server;
-    char received_size[128];
-    int fd;
 
     // create socket
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
