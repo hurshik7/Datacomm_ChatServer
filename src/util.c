@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <uuid/uuid.h>
 #include <ctype.h>
+#include <sys/utsname.h>
 
 
 #define UUID_LEN (37)
@@ -132,4 +133,15 @@ bool compare_strings(const char* str1, const char* str2) {
     return str1[i] == '\0' && str2[j] == '\0';
 }
 
+struct utsname identify_os(void) {
+    struct utsname unameData;
+    int result = uname(&unameData);
 
+    if (result == 0) {
+        printf("Server is running on: %s\n", unameData.sysname);
+    } else {
+        printf("Error getting uname information\n");
+    }
+
+    return unameData;
+}

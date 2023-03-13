@@ -45,6 +45,11 @@ char* generate_random_uuid_malloc(void);
 
 bool compare_strings(const char* str1, const char* str2);
 
+/**
+ * Identifies the Operating System of the host running the server.
+ * @return struct utsname contains os name, release level, ver. level, etc.
+ */
+struct utsname identify_os(void);
+
 
 #endif /* CHAT_SERVER_UTIL_H */
-
