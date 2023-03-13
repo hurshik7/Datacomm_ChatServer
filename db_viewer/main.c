@@ -17,16 +17,16 @@
 /**
  * db files stored here for macOS
  */
-//#define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
-//#define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
-//#define DB_USER_ACCOUNT "../cmake-build-debug/user_account_info"
+#define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
+#define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
+#define DB_USER_ACCOUNT "../cmake-build-debug/user_account_info"
 
 /**
  * db files stored here for Linux distros
  */
-#define DB_LOGIN_INFO "../src/user_login_info"
-#define DB_DISPLAY_NAMES "../src/display_names"
-#define DB_USER_ACCOUNT "../src/user_account_info"
+//#define DB_LOGIN_INFO "../src/user_login_info"
+//#define DB_DISPLAY_NAMES "../src/display_names"
+//#define DB_USER_ACCOUNT "../src/user_account_info"
 
 
 typedef struct UserLoginInfo {
@@ -80,7 +80,7 @@ void printAllUserAccounts(DBM *db)
         if (data.dptr != NULL) {
             struct UserAccountInfo* user = (struct UserAccountInfo *)data.dptr;
             char* clnt_addr = malloc(20);
-            strncpy(clnt_addr, (const char*)&user->sock_addr.sin_addr, MAX_IP_ADD_STR_LENGTH);
+            strncpy(clnt_addr, (const char*)&user->sock_addr, MAX_IP_ADD_STR_LENGTH);
             printf("%s, %s, %s, %d, %d\n", user->user_id, user->display_name,
                    clnt_addr, user->online_status, user->privilege_level);
         }
