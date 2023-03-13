@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+// fcntl must be explicitly declared when running db_viewer on Linux
+#include <fcntl.h>
 
 
 #define TOKEN_NAME_LENGTH (20)
@@ -12,9 +14,19 @@
 #define UUID_LEN (37)
 #define MAX_IP_ADD_STR_LENGTH (16)
 
-#define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
-#define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
-#define DB_USER_ACCOUNT "../cmake-build-debug/user_account_info"
+/**
+ * db files stored here for macOS
+ */
+//#define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
+//#define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
+//#define DB_USER_ACCOUNT "../cmake-build-debug/user_account_info"
+
+/**
+ * db files stored here for Linux distros
+ */
+#define DB_LOGIN_INFO "../src/user_login_info"
+#define DB_DISPLAY_NAMES "../src/display_names"
+#define DB_USER_ACCOUNT "../src/user_account_info"
 
 
 typedef struct UserLoginInfo {
