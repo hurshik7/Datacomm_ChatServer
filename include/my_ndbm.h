@@ -8,10 +8,11 @@
 #include <uuid/uuid.h>
 
 
-#define TOKEN_NAME_LENGTH (20)
-#define PSWD_MAX_LENGTH (30)
+#define TOKEN_NAME_LENGTH (21)
+#define PSWD_MAX_LENGTH (31)
 #define UUID_LEN (37)
 #define CLNT_IP_ADDR_LENGTH (16)
+#define DEFAULT_LIST_SIZE (64)
 
 
 #define DB_LOGIN_INFO "user_login_info"
@@ -33,6 +34,15 @@ typedef struct UserAccountInfo {
     int privilege_level;
 } user_account_t;
 
+typedef struct ChannelInfo {
+    char channel_id[UUID_LEN];
+    char creator[TOKEN_NAME_LENGTH];
+    char user_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char admin_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char banned_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char channel_name[TOKEN_NAME_LENGTH];
+    bool publicity;
+} channel_info_t;
 
 DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
