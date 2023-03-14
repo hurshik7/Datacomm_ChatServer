@@ -134,7 +134,7 @@ int main(void) {
             printf("res: %s\n", buffer);
             sleep(5);
         }
-    } else if (choice == '2') {
+    } else if (choice == '3') {
         // DESTROY_AUTH
         chat_header_t test_header;
         memset(&test_header, 0, sizeof(chat_header_t));
