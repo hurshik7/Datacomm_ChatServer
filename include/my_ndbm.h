@@ -10,6 +10,7 @@
 
 #define TOKEN_NAME_LENGTH (21)
 #define PSWD_MAX_LENGTH (31)
+#define DSPLY_NAME_LENGTH (21)
 #define UUID_LEN (37)
 #define CLNT_IP_ADDR_LENGTH (16)
 #define DEFAULT_LIST_SIZE (64)
