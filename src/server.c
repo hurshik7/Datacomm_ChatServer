@@ -44,10 +44,32 @@ int handle_request(int fd, const char* clnt_addr)
             }
             break;
         case OBJECT_CHANNEL:
+            if (header.version_type.type == TYPE_CREATE) {
 
+            } else if (header.version_type.type == TYPE_READ) {
+
+            } else if (header.version_type.type == TYPE_UPDATE) {
+
+            } else if (header.version_type.type == TYPE_DESTROY) {
+
+            } else {
+                perror("[SERVER]Error: wrong type");
+                assert(!"should not be here");
+            }
             break;
         case OBJECT_MESSAGE:
+            if (header.version_type.type == TYPE_CREATE) {
 
+            } else if (header.version_type.type == TYPE_READ) {
+
+            } else if (header.version_type.type == TYPE_UPDATE) {
+
+            } else if (header.version_type.type == TYPE_DESTROY) {
+
+            } else {
+                perror("[SERVER]Error: wrong type");
+                assert(!"should not be here");
+            }
             break;
         case OBJECT_AUTH:
             // it relates to login(CREATE), logout(DESTROY)
