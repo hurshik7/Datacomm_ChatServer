@@ -368,3 +368,48 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     return 0;
 }
+
+int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
+{
+    char body[DEFUALT_BUFFER] = { '\0', };
+    if (result == 0) {
+        strcpy(body, "200\3\0");
+        strcat(body, token);
+    } else {
+        if (result == ERROR_LOGOUT_INVALID_FIELDS) {
+            strcpy(body, "400\3\0");
+            strcat(body, "Invalid fields provided");
+            strcat(body, token);
+        } else if (result == ERROR_LOGOUT_USER_MISMATCH_ADDRESS) {
+            strcpy(body, "403\3\0");
+            strcat(body, "Connection ip address does not match address in database");
+            strcat(body, token);
+        } else if (result == ERROR_LOGOUT_ADMIN_USER_NOT_EXIST) {
+            strcpy(body, "404\3\0");
+            strcat(body, "User does not exist");
+            strcat(body, token);
+        } else if (result == ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE) {
+            strcpy(body, "412\3\0");
+            strcat(body, "User is not currently online");
+            strcat(body, token);
+        } else {
+            assert(!"should not be here");
+        }
+    }
+    header.body_size = strlen(body);
+    uint16_t body_size = header.body_size;
+    header.body_size = htons(header.body_size);
+    uint32_t header_int;
+    memcpy(&header_int, &header, sizeof(chat_header_t));
+    header_int = htonl(header_int);
+    if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
+        perror("send header (send_create_user_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_create_user_response)");
+        return -1;
+    }
+    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    return 0;
+}
