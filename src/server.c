@@ -275,37 +275,41 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
-    if (login_info == NULL) {
-        // check if req header is valid
-        goto error_exist_invalid_fields;
-    } else {
-        // set variable to true if user exists in db
-        is_token_duplicate = true;
-    }
+    // TODO PROBLEM HERE
+    switch (user_account->privilege_level) {
+        case 0:
+            if (login_info != NULL) {
+                // user exists in db
+                is_token_duplicate = true;
+            } else {
+                // set variable to true if user exists in db
+                goto error_exist_invalid_fields;
+            }
 
-    if (strcmp((char*)&user_account->sock_addr, clnt_addr) != 0) {
-        // the connection ip addr does not match the one stored in db
-        goto error_exit_mismatch_address;
-    }
+            if (strcmp((char*)&user_account->sock_addr, clnt_addr) != 0) {
+                // the connection ip addr does not match the one stored in db
+                goto error_exit_mismatch_address;
+            }
+        case 1:
+            if (login_info != NULL) {
+                // user exists in db
+                is_token_duplicate = true;
+            } else {
+                // set variable to true if user exists in db
+                goto error_exist_invalid_fields;
+            }
 
-    if (login_info == NULL) {
-        // check if req header is valid
-        goto error_exit_admin_user_not_exist;
-    } else {
-        // set variable to true if user exists in db
-        is_token_duplicate = true;
-    }
-
-    if (user_account->online_status != 1) {
-        // the user is not online
-        goto error_exit_admin_user_not_online;
+            if (user_account->online_status != 1) {
+                // the user is not online
+                goto error_exit_admin_user_not_online;
+            }
     }
 
     assert(is_token_duplicate == true && user_account->online_status == 1);
     assert(login_info != NULL);
 
     if (user_account != NULL) {
-        login_user_account_malloc_or_null(user_account, clnt_addr);
+        logout_user_account_malloc_or_null(user_account);
         insert_user_account(user_account);
     }
     strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
@@ -367,9 +371,19 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, cons
     strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
     printf("stored value: %s\n", (char*)&user_acc->sock_addr);
     printf("param value: %s\n", clnt_addr);
-    // TODO PROBLEM HERE
     user_acc->online_status = true;
     user_acc->privilege_level = 0;
+    return user_acc;
+}
+
+user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc)
+{
+    if (user_acc == NULL) {
+        perror("fetch user_account_t");
+        return NULL;
+    }
+    strncpy((char*)&user_acc->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
+    user_acc->online_status = false;
     return user_acc;
 }
 
