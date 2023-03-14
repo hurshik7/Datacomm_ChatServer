@@ -79,7 +79,8 @@ int handle_request(int fd, const char* clnt_addr)
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
-
+                result = read_and_logout_user(fd, token, clnt_addr);
+                send_logout_user_response(fd, header, result, token, clnt_addr);
             } else {
                 perror("[SERVER]Error: wrong type");
                 assert(!"should not be here");
@@ -249,6 +250,82 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     error_exit_invalid_credentials:
     free(login_info);
     return ERROR_LOGIN_INVALID_CREDENTIALS;
+}
+
+int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
+{
+    char buffer[DEFUALT_BUFFER];
+    memset(buffer, '\0', DEFUALT_BUFFER);
+    ssize_t nread = read(fd, buffer, DEFUALT_BUFFER);
+    if (nread <= 0) {
+        perror("[SERVER]Error: read body");
+        return -1;
+    }
+
+    char display_name[DSPLY_NAME_LENGTH] = { '\0', };
+    char* token = strtok(buffer, "\3"); // login_token
+    strncpy(display_name, token, strlen(token));
+
+    bool is_token_duplicate = false;
+    user_login_t* login_info = get_login_info_malloc_or_null(display_name);
+
+    char* clnt_uuid = malloc(UUID_LEN);
+    strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
+    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
+
+    user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
+
+    if (login_info == NULL) {
+        // check if req header is valid
+        goto error_exist_invalid_fields;
+    } else {
+        // set variable to true if user exists in db
+        is_token_duplicate = true;
+    }
+
+    if (strcmp((char*)&user_account->sock_addr, clnt_addr) != 0) {
+        // the connection ip addr does not match the one stored in db
+        goto error_exit_mismatch_address;
+    }
+
+    if (login_info == NULL) {
+        // check if req header is valid
+        goto error_exit_admin_user_not_exist;
+    } else {
+        // set variable to true if user exists in db
+        is_token_duplicate = true;
+    }
+
+    if (user_account->online_status != 1) {
+        // the user is not online
+        goto error_exit_admin_user_not_online;
+    }
+
+    assert(is_token_duplicate == true && user_account->online_status == 1);
+    assert(login_info != NULL);
+
+    if (user_account != NULL) {
+        login_user_account_malloc_or_null(user_account, clnt_addr);
+        insert_user_account(user_account);
+    }
+    strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
+
+    free(user_account);
+    free(login_info);
+    free(clnt_uuid);
+    return 0;
+    error_exist_invalid_fields:
+    free(login_info);
+    return ERROR_LOGOUT_INVALID_FIELDS;
+    error_exit_mismatch_address:
+    free(login_info);
+    return ERROR_LOGOUT_USER_MISMATCH_ADDRESS;
+    error_exit_admin_user_not_exist:
+    free(login_info);
+    return ERROR_LOGOUT_ADMIN_USER_NOT_EXIST;
+    error_exit_admin_user_not_online:
+    free(login_info);
+    return ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE;
 }
 
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
