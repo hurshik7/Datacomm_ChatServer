@@ -500,5 +500,6 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         return -1;
     }
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    close(fd);
     return 0;
 }
