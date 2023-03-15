@@ -179,13 +179,13 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     free(user_uuid_malloc);
     free(login_info);
     return 0;
-error_exit_duplicate_token_and_name:
+    error_exit_duplicate_token_and_name:
     free(login_info);
     return ERROR_CREATE_USER_DUPLICATE_ALL;
-error_exit_duplicate_login_token:
+    error_exit_duplicate_login_token:
     free(login_info);
     return ERROR_CREATE_USER_DUPLICATE_TOKEN;
-error_exit_duplicate_display_name:
+    error_exit_duplicate_display_name:
     free(login_info);
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
@@ -296,7 +296,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
                 is_token_duplicate = true;
             } else {
                 // set variable to true if user exists in db
-                goto error_exist_invalid_fields;
+                goto error_exit_admin_user_not_exist;
             }
 
             if (user_account->online_status != 1) {
@@ -369,8 +369,6 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, cons
         return NULL;
     }
     strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
-    printf("stored value: %s\n", (char*)&user_acc->sock_addr);
-    printf("param value: %s\n", clnt_addr);
     user_acc->online_status = true;
     user_acc->privilege_level = 0;
     return user_acc;
