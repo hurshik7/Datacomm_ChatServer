@@ -167,6 +167,7 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
     if (user_login != NULL) {
         insert_user_login(user_login);
+
     }
     user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name);
     if (user_account != NULL) {
@@ -218,14 +219,14 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         goto error_exit_no_such_token;
     }
     if (compare_strings(login_info->password, password) == false
-    || compare_strings(login_info->login_token, login_token) == false) {
+        || compare_strings(login_info->login_token, login_token) == false) {
         // the credentials entered do not match account credentials in the db
         goto error_exit_invalid_credentials;
     }
 
     assert(is_token_duplicate == true &&
-    (compare_strings(login_info->password, password) == true
-     || compare_strings(login_info->login_token, login_token) == true));
+           (compare_strings(login_info->password, password) == true
+            || compare_strings(login_info->login_token, login_token) == true));
     assert(login_info != NULL);
 
     // store uuid and remove extra char at end of uuid string
@@ -357,7 +358,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     strncpy(user_account->user_id, uuid, UUID_LEN);
     strncpy(user_account->display_name, display_name, TOKEN_NAME_LENGTH);
     strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
-    user_account->online_status = 0;
+    user_account->online_status = false;
     user_account->privilege_level = 0;
     return user_account;
 }
@@ -370,7 +371,10 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, cons
     }
     strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
     user_acc->online_status = true;
-    user_acc->privilege_level = 0;
+    if (strcmp(user_acc->display_name, "admin") == 0) {
+        // intialize privilege to 1 for admin account
+        user_acc->privilege_level = 1;
+    }
     return user_acc;
 }
 
