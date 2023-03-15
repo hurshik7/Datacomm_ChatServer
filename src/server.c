@@ -312,7 +312,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
         logout_user_account_malloc_or_null(user_account);
         insert_user_account(user_account);
     }
-    strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
+    strncpy(token_out, user_account->display_name, DSPLY_NAME_LENGTH);
 
     free(user_account);
     free(login_info);
