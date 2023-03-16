@@ -360,6 +360,11 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
     user_account->online_status = false;
     user_account->privilege_level = 0;
+
+    if (strcmp(user_account->display_name, "admin") == 0) {
+        user_account->privilege_level = 1;
+    }
+
     return user_account;
 }
 
