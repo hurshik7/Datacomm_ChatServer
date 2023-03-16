@@ -50,7 +50,7 @@ void printAllLoginInfos(DBM *db);
 void get_ip_str(const struct sockaddr *sa, char *out_str);
 struct utsname identify_os(void);
 
-int main(int argc, char* argv[])
+int main(void)
 {
     char *user_acc = malloc(sizeof(char) * 256);
     char *user_dsply_nm = malloc(sizeof(char) * 256);
@@ -81,6 +81,9 @@ int main(int argc, char* argv[])
     printAllLoginInfos(login_infos);
     puts("");
 
+    free(user_acc);
+    free(user_dsply_nm);
+    free(user_log_info);
     dbm_close(login_infos);
     dbm_close(display_names);
     dbm_close(user_accounts);

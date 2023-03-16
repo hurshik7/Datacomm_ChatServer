@@ -24,7 +24,7 @@ typedef struct chat_header {
 
 int copy(int from_fd, int to_fd, size_t count);
 
-int main(int argc, char const *argv[]) {
+int main(void) {
 
     int client_socket;
     struct sockaddr_in server;
@@ -51,7 +51,8 @@ int main(int argc, char const *argv[]) {
     char choice;
 
     printf("%s", "[1] - CREATE_USER\n"
-                 "[2] - CREATE_AUTH");
+                 "[2] - CREATE_AUTH\n"
+                 "[3] - DESTROY_AUTH");
     scanf("%c", &choice);
 
     if (choice == '1') {
@@ -106,6 +107,46 @@ int main(int argc, char const *argv[]) {
         printf("object: %d\n", test_header.object);
 
         char body[] = "bennychao\3monkey123\0";
+        test_header.body_size = (uint16_t) strlen(body);
+        uint16_t body_size = test_header.body_size;
+        test_header.body_size = htons(test_header.body_size);
+
+        uint32_t temp_int = 0;
+        memcpy(&temp_int, &test_header, sizeof(test_header));
+
+        while (1) {
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
+
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
+
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+                perror("read");
+            }
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+                perror("recv");
+            }
+            printf("res: %s\n", buffer);
+            sleep(5);
+        }
+    } else if (choice == '3') {
+        // DESTROY_AUTH
+        chat_header_t test_header;
+        memset(&test_header, 0, sizeof(chat_header_t));
+        test_header.version_type.version = 1;
+        test_header.version_type.type = 4;
+        test_header.object = 4;
+        // for testing read_header
+        printf("version: %d\n", test_header.version_type.version);
+        printf("type: %d\n", test_header.version_type.type);
+        printf("object: %d\n", test_header.object);
+
+        char body[] = "bennychao\0";
         test_header.body_size = (uint16_t) strlen(body);
         uint16_t body_size = test_header.body_size;
         test_header.body_size = htons(test_header.body_size);
