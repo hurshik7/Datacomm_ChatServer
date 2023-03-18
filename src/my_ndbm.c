@@ -5,11 +5,11 @@
 #include <string.h>
 
 
-DBM* open_db_or_null(const char* db_name)
+DBM* open_db_or_null(const char* db_name, int flag)
 {
-    DBM* db = dbm_open(db_name, O_CREAT | O_RDWR | O_SYNC | O_APPEND, 0644);
+    DBM* db = dbm_open(db_name, flag, 0644);
     if (!db) {
-        perror("[DB]Error: Failed to create database.\n");
+//        perror("[DB]Error: Failed to open database");
         return NULL;
     }
     return db;
@@ -17,9 +17,9 @@ DBM* open_db_or_null(const char* db_name)
 
 user_login_t* get_login_info_malloc_or_null(char* login_token)
 {
-    DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO);
+    DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO, O_RDONLY | O_SYNC);
     if (login_info_db == NULL) {
-        perror("[DB]Error: Failed to open LOGIN_INFO DB");
+//        perror("[DB]Error: Failed to open LOGIN_INFO DB");
         return NULL;
     }
 
@@ -28,12 +28,12 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = login_token;
-    key.dsize = strlen(login_token) + 1;
+    key.dsize = strlen(login_token);
 
     value = dbm_fetch(login_info_db, key);
     if (value.dptr == NULL) {
         dbm_close(login_info_db);
-        perror("[DB]Error: User not found.\n");
+        perror("[DB]Error: User not found.");
         return NULL;
     }
 
@@ -49,11 +49,43 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     return login_info;
 }
 
+user_account_t* get_user_account_malloc_or_null(char* user_token)
+{
+    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT, O_RDONLY | O_SYNC);
+    if (user_acc_db == NULL) {
+        return NULL;
+    }
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_token;
+    key.dsize = strlen(user_token);
+
+    value = dbm_fetch(user_acc_db, key);
+    if (value.dptr == NULL) {
+        dbm_close(user_acc_db);
+        perror("[DB]Error: User not found.");
+        return NULL;
+    }
+
+    user_account_t* user_acc = (user_account_t*) malloc(sizeof(user_account_t));
+    if (user_acc == NULL) {
+        dbm_close(user_acc_db);
+        perror("[DB]Error: malloc()");
+        return NULL;
+    }
+
+    memcpy(user_acc, value.dptr, sizeof(user_login_t));
+    dbm_close(user_acc_db);
+    return user_acc;
+}
+
 bool check_duplicate_display_name(char* display_name)
 {
-    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES);
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES, O_RDONLY | O_SYNC);
     if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+//        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return false;
     }
 
@@ -76,7 +108,7 @@ bool check_duplicate_display_name(char* display_name)
 
 int insert_user_account(user_account_t* user_account)
 {
-    DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT);
+    DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_accounts == NULL) {
         perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
         return -1;
@@ -103,7 +135,7 @@ int insert_user_account(user_account_t* user_account)
 
 int insert_display_name(char* display_name, char* uuid)
 {
-    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES);
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (display_names == NULL) {
         perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return -1;
@@ -116,7 +148,7 @@ int insert_display_name(char* display_name, char* uuid)
     key.dptr = display_name;
     key.dsize = strlen(display_name);
     value.dptr = uuid;
-    value.dsize = strlen(uuid);
+    value.dsize = UUID_LEN;
 
     if (dbm_store(display_names, key, value, DBM_REPLACE) != 0) {
         perror("[DB]Error: Failed to insert display_name\n");
@@ -130,7 +162,7 @@ int insert_display_name(char* display_name, char* uuid)
 
 int insert_user_login(user_login_t* user_login)
 {
-    DBM* user_logins = open_db_or_null(DB_LOGIN_INFO);
+    DBM* user_logins = open_db_or_null(DB_LOGIN_INFO, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_logins == NULL) {
         perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
         return -1;

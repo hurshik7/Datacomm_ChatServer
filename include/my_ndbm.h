@@ -8,15 +8,17 @@
 #include <uuid/uuid.h>
 
 
-#define TOKEN_NAME_LENGTH (20)
-#define PSWD_MAX_LENGTH (30)
+#define TOKEN_NAME_LENGTH (21)
+#define PSWD_MAX_LENGTH (31)
+#define DSPLY_NAME_LENGTH (21)
 #define UUID_LEN (37)
+#define CLNT_IP_ADDR_LENGTH (16)
+#define DEFAULT_LIST_SIZE (64)
 
 
 #define DB_LOGIN_INFO "user_login_info"
 #define DB_DISPLAY_NAMES "display_names"
 #define DB_USER_ACCOUNT "user_account_info"
-
 
 
 typedef struct UserLoginInfo {
@@ -33,9 +35,19 @@ typedef struct UserAccountInfo {
     int privilege_level;
 } user_account_t;
 
+typedef struct ChannelInfo {
+    char channel_id[UUID_LEN];
+    char creator[TOKEN_NAME_LENGTH];
+    char user_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char admin_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char banned_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH];
+    char channel_name[TOKEN_NAME_LENGTH];
+    bool publicity;
+} channel_info_t;
 
-DBM* open_db_or_null(const char *db_name);
+DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
+user_account_t* get_user_account_malloc_or_null(char* user_token);
 bool check_duplicate_display_name(char* display_name);
 int insert_user_account(user_account_t* user_account);
 int insert_display_name(char* display_name, char* uuid);

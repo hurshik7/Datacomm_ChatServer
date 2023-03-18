@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <uuid/uuid.h>
+#include <ctype.h>
+#include <sys/utsname.h>
 
 
 #define UUID_LEN (37)
@@ -48,7 +50,7 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     size_t str_length = strlen(str);
     size_t word_count = 0;
     size_t ret_size = DEFAULT_ARGS;
-    size_t word_length = 0;
+    size_t word_length;
     char** ret;
     void* temp = NULL;
 
@@ -92,7 +94,7 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     return ret;
 }
 
-char* generate_random_uuid_malloc()
+char* generate_random_uuid_malloc(void)
 {
     uuid_t bin_uuid;
     uuid_generate_random(bin_uuid);
@@ -105,3 +107,41 @@ char* generate_random_uuid_malloc()
     return uuid;
 }
 
+bool compare_strings(const char* str1, const char* str2) {
+    int i = 0, j = 0;
+    while (str1[i] != '\0' && str2[j] != '\0') {
+        if (isspace(str1[i])) {
+            i++;
+            continue;
+        }
+        if (isspace(str2[j])) {
+            j++;
+            continue;
+        }
+        if (str1[i] != str2[j]) {
+            return false;
+        }
+        i++;
+        j++;
+    }
+    while (isspace(str1[i])) {
+        i++;
+    }
+    while (isspace(str2[j])) {
+        j++;
+    }
+    return str1[i] == '\0' && str2[j] == '\0';
+}
+
+struct utsname identify_os(void) {
+    struct utsname unameData;
+    int result = uname(&unameData);
+
+    if (result == 0) {
+        printf("Server is running on: %s\n", unameData.sysname);
+    } else {
+        printf("Error getting uname information\n");
+    }
+
+    return unameData;
+}
