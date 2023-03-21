@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 
-int handle_request(int fd, const char* clnt_addr)
+int handle_request(int fd, const char* clnt_addr, connected_user* active_users)
 {
     int result;
     chat_header_t header;
@@ -511,4 +511,24 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     close(fd);
     return 0;
+}
+
+void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user, int active_user_count)
+{
+    connected_user insert_user = {connecting_user->display_name, (char*)&connecting_user->sock_addr};
+    cache[active_user_count++] = insert_user;
+}
+
+void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int active_user_count)
+{
+    for (int i = 0; i < active_user_count; i++) {
+        if (strcmp(cache[i].dsply_name, connecting_user->display_name) == 0) {
+            // Remove the user from the data structure
+            for (int j = i; j < active_user_count - 1; j++) {
+                cache[j] = cache[j+1];
+            }
+            active_user_count--;
+            break;
+        }
+    }
 }
