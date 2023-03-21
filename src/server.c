@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 
-int handle_request(int fd, const char* clnt_addr, connected_user* active_users)
+int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 {
     int result;
     chat_header_t header;
@@ -74,7 +74,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* active_users)
         case OBJECT_AUTH:
             // it relates to login(CREATE), logout(DESTROY)
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_login_user(fd, token, clnt_addr);
+                result = read_and_login_user(fd, token, clnt_addr, cache);
                 send_login_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
@@ -191,7 +191,7 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
-int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
+int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
