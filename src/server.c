@@ -241,6 +241,12 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     }
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
+    // store user in active user cache upon successful login
+    int num_active_users = get_num_connected_users(cache);
+    insert_user_in_cache(cache, user_account, num_active_users);
+    // TODO remove testing print statement
+    printf("CACHE\ndisplay name: %s  ip address: %s\n", cache[0].dsply_name, cache[0].ip_address);
+
     free(user_account);
     free(login_info);
     free(clnt_uuid);
@@ -511,6 +517,19 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     close(fd);
     return 0;
+}
+
+int get_num_connected_users(connected_user* cache)
+{
+    int n  = 0;
+    for (int i = 0; i < 255; i++) {
+        if (cache[i].dsply_name == NULL) {
+            return n;
+        } else if (cache[i].dsply_name[0] != '\0') {
+            n++;
+        }
+    }
+    return n;
 }
 
 void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user, int active_user_count)
