@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
         // Call poll() to wait for events on the file descriptors
         int num_fds = MAX_CLIENTS;
         int result = poll(pollfds, num_fds, -1); // -1 means infinite waiting
+        connected_user active_users[MAX_CLIENTS]; // active user cache w/ upper limit of 255 concurrent clients
         if (result > 0) {
             // Check if there's a new client connection
             if (pollfds[0].revents == POLLIN) {
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
                     case POLLIN:
                         // read request
                         printf("data from pollfds[%d]\n", i);
-                        if (handle_request(pollfds[i].fd, client_addrs[i]) != 0) {
+                        if (handle_request(pollfds[i].fd, client_addrs[i], active_users) != 0) {
                             continue;
                         }
 
