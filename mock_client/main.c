@@ -53,7 +53,7 @@ int main(void) {
     printf("%s", "[0] - CREATE_ADMIN\n"
                  "[1] - CREATE_USER\n"
                  "[2] - CREATE_AUTH\n"
-                 "[3] - DESTROY_AUTH");
+                 "[3] - DESTROY_AUTH\n");
     scanf("%c", &choice);
 
     if (choice == '0') {
