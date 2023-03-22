@@ -1,3 +1,4 @@
+#include "db_viewer.h"
 #include "ncurses_ui.h"
 #include <pthread.h>
 
@@ -9,7 +10,7 @@ extern pthread_t server_thread;
 void print_menu(WINDOW *menu_win, int highlight)
 {
     int x, y, i;
-    char *choices[] = {
+    const char* choices[] = {
             "1. Run server",
             "2. View database",
             "3. Quit",
@@ -93,19 +94,15 @@ void init_ncurses(void)
     cbreak();
 }
 
-void view_database_wrapper(void)
+void run_db_viewer_wrapper(void)
 {
     // Clear the screen
     clear();
     refresh();
 
-    // Display database contents
     printw("Database contents:\n");
-    // Print your database contents here
-    printw("Example database content...\n");
-
-    // Refresh the screen to show the database contents
     refresh();
+    run_db_viewer();
 
     // Wait for a key press to close the database view
     getch();
