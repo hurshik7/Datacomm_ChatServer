@@ -1,3 +1,4 @@
+#include "db_viewer.h"
 #include "ncurses_ui.h"
 #include <pthread.h>
 
@@ -93,19 +94,15 @@ void init_ncurses(void)
     cbreak();
 }
 
-void view_database_wrapper(void)
+void run_db_viewer_wrapper(void)
 {
     // Clear the screen
     clear();
     refresh();
 
-    // Display database contents
     printw("Database contents:\n");
-    // Print your database contents here
-    printw("Example database content...\n");
-
-    // Refresh the screen to show the database contents
     refresh();
+    run_db_viewer();
 
     // Wait for a key press to close the database view
     getch();

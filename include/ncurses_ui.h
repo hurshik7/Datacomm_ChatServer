@@ -15,7 +15,7 @@ WINDOW* create_menu_window(void);
 int navigate_menu(WINDOW* menu_win);
 void print_title(int startx);
 void init_ncurses(void);
-void view_database_wrapper(void);
+void run_db_viewer_wrapper(void);
 
 
 #endif //CHAT_SERVER_NCURSES_UI_H
