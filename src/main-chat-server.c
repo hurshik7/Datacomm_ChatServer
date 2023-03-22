@@ -16,6 +16,7 @@
 
 static void init_pollfd(struct pollfd* pollfds, int server_sock);
 
+connected_user active_users[MAX_CLIENTS]; // active user cache w/ upper limit of 255 concurrent clients
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in client_addr;
@@ -62,13 +63,11 @@ int main(int argc, char *argv[]) {
     // Initialize the pollfd structure for the poll-server socket
     struct pollfd pollfds[MAX_CLIENTS];
     init_pollfd(pollfds, opts.server_sock);
-
     fprintf(stdout, "Listening on port %d\n", opts.port_in);
     while (1) {
         // Call poll() to wait for events on the file descriptors
         int num_fds = MAX_CLIENTS;
         int result = poll(pollfds, num_fds, -1); // -1 means infinite waiting
-        connected_user active_users[MAX_CLIENTS]; // active user cache w/ upper limit of 255 concurrent clients
         if (result > 0) {
             // Check if there's a new client connection
             if (pollfds[0].revents == POLLIN) {
