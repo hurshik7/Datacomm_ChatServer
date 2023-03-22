@@ -1,7 +1,11 @@
 #include <ncurses.h>
 #include <string.h>
+#include "error.h"
+//#include "~/src/main-chat-server.c"
 
-int main()
+//to run ncurses
+// gcc -o hello main.c -lncurses
+int main(void)
 {
     // START NCURSES
     initscr();
@@ -20,7 +24,8 @@ int main()
     //Enable arrow keys
     keypad(menuwin, true);
 
-    char choices[4][256] = {"Start Server", "End Server", "Show Database", "Exit"};
+    char choices[5][256] = {"Start Server", "End Server", "Show Database", "Admin", "Exit"};
+
     int choice;
     int highlight = 0;
 
@@ -59,7 +64,12 @@ int main()
             }
         }
 
-    printw("Your choice was: %s", choices[highlight]);
+    if (strcmp(choices[highlight], choices[0]) == 0)
+    {
+        printw("Server is running...");
+//        run_server(argc,argv);
+    }
+//    printw("Your choice was: %s", choices[highlight]);
     //Ensuring program waits before exiting
     getch();
     endwin();

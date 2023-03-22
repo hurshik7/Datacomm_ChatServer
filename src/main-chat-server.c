@@ -16,8 +16,8 @@
 
 static void init_pollfd(struct pollfd* pollfds, int server_sock);
 
-
-int main(int argc, char *argv[]) {
+static void run_server(int argc, char *argv[])
+{
     struct sockaddr_in client_addr;
     int option;
     socklen_t socket_len;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
                     case 0:
                         break;
 
-                    // data is ready
+                        // data is ready
                     case POLLIN:
                         // read request
                         printf("data from pollfds[%d]\n", i);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
                             continue;
                         }
 
-                     // default, fall-through from POLLIN case
+                        // default, fall-through from POLLIN case
                     default:
                         //close(pollfds[i].fd);
                         //log_event(LOG_FILENAME, client_addrs[i], "DISCONNECT", i);
@@ -122,6 +122,10 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+}
+
+int main(int argc, char *argv[]) {
+    run_server(argc, argv);
 }
 
 static void init_pollfd(struct pollfd* pollfds, int server_sock)
