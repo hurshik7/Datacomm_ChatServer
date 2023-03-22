@@ -79,7 +79,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
-                result = read_and_logout_user(fd, token, clnt_addr);
+                result = read_and_logout_user(fd, token, clnt_addr, cache);
                 send_logout_user_response(fd, header, result, token, clnt_addr);
             } else {
                 perror("[SERVER]Error: wrong type");
@@ -242,8 +242,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
-    int num_active_users = get_num_connected_users(cache);
-    insert_user_in_cache(cache, user_account, num_active_users);
+    insert_user_in_cache(cache, user_account);
     // TODO remove testing print statement
     printf("CACHE\ndisplay name: %s  ip address: %s\n", cache[0].dsply_name, cache[0].ip_address);
 
@@ -259,7 +258,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     return ERROR_LOGIN_INVALID_CREDENTIALS;
 }
 
-int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
+int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -320,6 +319,9 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
         insert_user_account(user_account);
     }
     strncpy(token_out, user_account->display_name, DSPLY_NAME_LENGTH);
+
+    // remove user in active user cache upon successful login
+    remove_user_in_cache(cache, user_account);
 
     free(user_account);
     free(login_info);
@@ -514,6 +516,7 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
+
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     close(fd);
     return 0;
@@ -523,7 +526,8 @@ int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
     for (int i = 0; i < 255; i++) {
-        if (cache[i].dsply_name == NULL) {
+        // TODO remove testing print statement
+        if (n <= 255 && cache[i].dsply_name == NULL) {
             return n;
         } else if (cache[i].dsply_name[0] != '\0') {
             n++;
@@ -532,21 +536,38 @@ int get_num_connected_users(connected_user* cache)
     return n;
 }
 
-void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user, int active_user_count)
+void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user)
 {
+    int num_active_users = get_num_connected_users(cache);
+    // TODO remove testing print statement
+    printf("\nlogin active user count: %d\n", num_active_users);
+    for (int i = 0; i < num_active_users; i++) {
+        printf("what's in my cache? %s\n", cache[i].dsply_name);
+    }
     connected_user insert_user = {connecting_user->display_name, (char*)&connecting_user->sock_addr};
-    cache[active_user_count++] = insert_user;
+    cache[num_active_users] = insert_user;
+    num_active_users++;
+    // TODO remove testing print statement
+    printf("\nlogin active user count: %d\n", num_active_users);
+    for (int i = 0; i < num_active_users; i++) {
+        printf("what's in my cache? %s\n", cache[i].dsply_name);
+    }
 }
 
-void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int active_user_count)
+void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user)
 {
-    for (int i = 0; i < active_user_count; i++) {
+    int num_active_users = get_num_connected_users(cache);
+    // TODO fix problem removing user from active user cache
+    for (int i = 0; i < num_active_users; i++) {
         if (strcmp(cache[i].dsply_name, connecting_user->display_name) == 0) {
-            // Remove the user from the data structure
-            for (int j = i; j < active_user_count - 1; j++) {
+            for (int j = i; j < num_active_users - 1; j++) {
                 cache[j] = cache[j+1];
             }
-            active_user_count--;
+            // TODO remove testing print statement
+            printf("\nlogout active user count: %d\n", num_active_users);
+            num_active_users--;
+            // TODO remove testing print statement
+            printf("\nlogout active user count: %d\n", num_active_users);
             break;
         }
     }
