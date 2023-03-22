@@ -9,7 +9,7 @@ extern pthread_t server_thread;
 void print_menu(WINDOW *menu_win, int highlight)
 {
     int x, y, i;
-    char *choices[] = {
+    const char* choices[] = {
             "1. Run server",
             "2. View database",
             "3. Quit",
