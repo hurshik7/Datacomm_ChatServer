@@ -2,6 +2,7 @@
 #include "server.h"
 #include "util.h"
 #include <assert.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -88,8 +89,15 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             }
             break;
         default:
-            perror("[SERVER]Error: wrong object number");
-            assert(!"This should not be here");
+            printw("version: %d\n", header.version_type.version);
+            printw("type: %d\n", header.version_type.type);
+            printw("object: %d\n", header.object);
+            printw("body size: %d\n", header.body_size);
+            char temp_buffer[BUFSIZ] = { 0, };
+            read(fd, temp_buffer, header.body_size);
+            printw("body: %s\n", temp_buffer);
+//            perror("[SERVER]Error: wrong object number");
+//            assert(!"This should not be here");
     }
 
     return 0;
@@ -435,7 +443,9 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+//    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     return 0;
 }
 

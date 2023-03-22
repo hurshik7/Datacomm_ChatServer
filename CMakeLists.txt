@@ -18,6 +18,7 @@ set(CHAT_SERVER_SOURCE_LIST
         ${SOURCE_DIR}/error.c
         ${SOURCE_DIR}/logger.c
         ${SOURCE_DIR}/my_ndbm.c
+        ${SOURCE_DIR}/ncurses_ui.c
         ${SOURCE_DIR}/option_handler.c
         ${SOURCE_DIR}/server.c
         ${SOURCE_DIR}/util.c
@@ -30,12 +31,13 @@ set(CHAT_SERVER_HEADER_LIST
         ${INCLUDE_DIR}/error.h
         ${INCLUDE_DIR}/logger.h
         ${INCLUDE_DIR}/my_ndbm.h
+        ${INCLUDE_DIR}/ncurses_ui.h
         ${INCLUDE_DIR}/option_handler.h
         ${INCLUDE_DIR}/server.h
         ${INCLUDE_DIR}/util.h
         )
 set(CHAT_SERVER_REQUIRED_LIBRARIES_LIST
-
+        Curses
         )
 
 list(APPEND TEST_REQUIRED_LIBRARIES_LIST
