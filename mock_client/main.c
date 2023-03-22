@@ -50,12 +50,52 @@ int main(void) {
 
     char choice;
 
-    printf("%s", "[1] - CREATE_USER\n"
+    printf("%s", "[0] - CREATE_ADMIN\n"
+                 "[1] - CREATE_USER\n"
                  "[2] - CREATE_AUTH\n"
                  "[3] - DESTROY_AUTH");
     scanf("%c", &choice);
 
-    if (choice == '1') {
+    if (choice == '0') {
+        // CREATE USER
+        chat_header_t test_header;
+        memset(&test_header, 0, sizeof(chat_header_t));
+        test_header.version_type.version = 1;
+        test_header.version_type.type = 1;
+        test_header.object = 1;
+        // for testing read_header
+        printf("version: %d\n", test_header.version_type.version);
+        printf("type: %d\n", test_header.version_type.type);
+        printf("object: %d\n", test_header.object);
+
+        char body[] = "GlobalAdmin\3admin\3admin\0";
+        test_header.body_size = (uint16_t) strlen(body);
+        uint16_t body_size = test_header.body_size;
+        test_header.body_size = htons(test_header.body_size);
+        uint32_t temp_int = 0;
+        memcpy(&temp_int, &test_header, sizeof(test_header));
+
+        while (1) {
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
+
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
+
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+                perror("read");
+            }
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+                perror("recv");
+            }
+            printf("res: %s\n", buffer);
+            sleep(5);
+        }
+    } else if (choice == '1') {
         // CREATE USER
         chat_header_t test_header;
         memset(&test_header, 0, sizeof(chat_header_t));

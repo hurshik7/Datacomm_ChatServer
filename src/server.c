@@ -7,8 +7,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MAX_CLIENTS (255)
 
-int handle_request(int fd, const char* clnt_addr)
+int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 {
     int result;
     chat_header_t header;
@@ -74,12 +75,12 @@ int handle_request(int fd, const char* clnt_addr)
         case OBJECT_AUTH:
             // it relates to login(CREATE), logout(DESTROY)
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_login_user(fd, token, clnt_addr);
+                result = read_and_login_user(fd, token, clnt_addr, cache);
                 send_login_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
-                result = read_and_logout_user(fd, token, clnt_addr);
+                result = read_and_logout_user(fd, token, clnt_addr, cache);
                 send_logout_user_response(fd, header, result, token, clnt_addr);
             } else {
                 perror("[SERVER]Error: wrong type");
@@ -191,7 +192,7 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
-int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
+int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -241,6 +242,11 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     }
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
+    // store user in active user cache upon successful login
+    insert_user_in_cache(cache, user_account);
+    // TODO remove testing print statement
+    printf("CACHE\ndisplay name: %s  ip address: %s\n", cache[0].dsply_name, cache[0].ip_address);
+
     free(user_account);
     free(login_info);
     free(clnt_uuid);
@@ -253,7 +259,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     return ERROR_LOGIN_INVALID_CREDENTIALS;
 }
 
-int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr)
+int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
     char buffer[DEFUALT_BUFFER];
     memset(buffer, '\0', DEFUALT_BUFFER);
@@ -315,6 +321,9 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     }
     strncpy(token_out, user_account->display_name, DSPLY_NAME_LENGTH);
 
+    // remove user in active user cache upon successful login
+    remove_user_in_cache(cache, user_account);
+
     free(user_account);
     free(login_info);
     free(clnt_uuid);
@@ -360,6 +369,11 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
     user_account->online_status = false;
     user_account->privilege_level = 0;
+
+    if (strcmp(user_account->display_name, "admin") == 0) {
+        user_account->privilege_level = 1;
+    }
+
     return user_account;
 }
 
@@ -503,7 +517,59 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
+
     printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     close(fd);
     return 0;
+}
+
+int get_num_connected_users(connected_user* cache)
+{
+    int n  = 0;
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        // TODO remove testing print statement
+        if (n <= MAX_CLIENTS && cache[i].dsply_name == NULL) {
+            return n;
+        } else if (cache[i].dsply_name[0] != '\0') {
+            n++;
+        }
+    }
+    return n;
+}
+
+void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user)
+{
+    int num_active_users = get_num_connected_users(cache);
+    // TODO remove testing print statement
+    printf("\nlogin active user count: %d\n", num_active_users);
+    for (int i = 0; i < num_active_users; i++) {
+        printf("what's in my cache? %s\n", cache[i].dsply_name);
+    }
+    connected_user insert_user = {connecting_user->display_name, (char*)&connecting_user->sock_addr};
+    cache[num_active_users] = insert_user;
+    num_active_users++;
+    // TODO remove testing print statement
+    printf("\nlogin active user count: %d\n", num_active_users);
+    for (int i = 0; i < num_active_users; i++) {
+        printf("what's in my cache? %s\n", cache[i].dsply_name);
+    }
+}
+
+void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user)
+{
+    int num_active_users = get_num_connected_users(cache);
+    // TODO fix problem removing user from active user cache
+    for (int i = 0; i < num_active_users; i++) {
+        if (strcmp(cache[i].dsply_name, connecting_user->display_name) == 0) {
+            for (int j = i; j < num_active_users - 1; j++) {
+                cache[j] = cache[j+1];
+            }
+            // TODO remove testing print statement
+            printf("\nlogout active user count: %d\n", num_active_users);
+            num_active_users--;
+            // TODO remove testing print statement
+            printf("\nlogout active user count: %d\n", num_active_users);
+            break;
+        }
+    }
 }
