@@ -1,3 +1,4 @@
+#include "db_viewer.h"
 #include "error.h"
 #include "ncurses_ui.h"
 #include "option_handler.h"
@@ -17,7 +18,6 @@
 
 
 volatile bool server_running;
-pthread_t server_thread;
 
 
 static void init_pollfd(struct pollfd* pollfds, int server_sock);
@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
     int choice;
     bool quit = false;
     server_running = false;
+    pthread_t server_thread;
 
     int startx = (COLS - (int) strlen(TITLE)) / 2;
 
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
                 }
                 break;
             case 2:
-                view_database_wrapper();
+                run_db_viewer_wrapper();
                 break;
             case 3:
                 quit = true;
