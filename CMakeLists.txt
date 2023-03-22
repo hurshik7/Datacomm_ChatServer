@@ -15,6 +15,7 @@ set(TESTS_DIR ${PROJECT_SOURCE_DIR}/tests)
 
 set(CHAT_SERVER_SOURCE_LIST
         ${SOURCE_DIR}/conversion.c
+        ${SOURCE_DIR}/db_viewer.c
         ${SOURCE_DIR}/error.c
         ${SOURCE_DIR}/logger.c
         ${SOURCE_DIR}/my_ndbm.c
@@ -28,6 +29,7 @@ set(CHAT_SERVER_SOURCE_MAIN
         )
 set(CHAT_SERVER_HEADER_LIST
         ${INCLUDE_DIR}/conversion.h
+        ${INCLUDE_DIR}/db_viewer.h
         ${INCLUDE_DIR}/error.h
         ${INCLUDE_DIR}/logger.h
         ${INCLUDE_DIR}/my_ndbm.h
