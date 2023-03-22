@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MAX_CLIENTS (255)
 
 int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 {
@@ -525,9 +526,9 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
 int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
-    for (int i = 0; i < 255; i++) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
         // TODO remove testing print statement
-        if (n <= 255 && cache[i].dsply_name == NULL) {
+        if (n <= MAX_CLIENTS && cache[i].dsply_name == NULL) {
             return n;
         } else if (cache[i].dsply_name[0] != '\0') {
             n++;
