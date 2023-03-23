@@ -18,9 +18,9 @@
 /**
  * db files stored here for macOS
  */
-#define DB_LOGIN_INFO "../cmake-build-debug/user_login_info"
-#define DB_DISPLAY_NAMES "../cmake-build-debug/display_names"
-#define DB_USER_ACCOUNT "../cmake-build-debug/user_account_info"
+#define DB_LOGIN_INFO "../user_login_info"
+#define DB_DISPLAY_NAMES "../display_names"
+#define DB_USER_ACCOUNT "../user_account_info"
 
 /**
  * db files stored here for Linux distros
@@ -155,7 +155,7 @@ struct utsname identify_os(void) {
     int result = uname(&unameData);
 
     if (result == 0) {
-        printf("Server is running on: %s\n", unameData.sysname);
+        printf("\nServer is running on: %s\n", unameData.sysname);
     } else {
         printf("Error getting uname information\n");
     }
