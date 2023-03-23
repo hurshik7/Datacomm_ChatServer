@@ -116,7 +116,6 @@ int run_server(struct options* opts)
 {
     struct sockaddr_in client_addr;
     int option;
-    socklen_t socket_len;
     char client_addrs[MAX_CLIENTS][MAX_IP_ADD_STR_LENGTH];
     memset(client_addrs, 0, MAX_CLIENTS * MAX_IP_ADD_STR_LENGTH);
 
@@ -162,6 +161,7 @@ int run_server(struct options* opts)
             // Check if there's a new client connection
             if (pollfds[0].revents == POLLIN) {
                 memset(&client_addr, 0, sizeof(struct sockaddr_in));
+                socklen_t socket_len = sizeof(client_addr);
                 int client_sock = accept(opts->server_sock, (struct sockaddr *) &client_addr, &socket_len);
                 if (client_sock < 0) {
                     close(opts->server_sock);
