@@ -252,8 +252,6 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     // check to see if a user is logging in from a different ip addr
     int active_users = get_num_connected_users(cache);
     for (int i = 0; i < active_users; i++) {
-        printw("\n index: %d  display name: %s\n", i, cache[i].dsply_name);
-        refresh();
         if (strcmp(cache[i].dsply_name, user_account->display_name) == 0) {
             if (strcmp(cache[i].ip_address, clnt_addr) != 0) {
                 if (user_account->online_status == 1) {
@@ -478,7 +476,8 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     return 0;
 }
 
@@ -515,7 +514,8 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
         perror("send body (send_create_user_response)");
         return -1;
     }
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     return 0;
 }
 
@@ -565,7 +565,8 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         return -1;
     }
 
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     close(fd);
     return 0;
 }
@@ -592,11 +593,14 @@ void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connect
     cache[num_active_users] = insert_user;
     num_active_users++;
     // TODO remove testing print statement
-    printf("\nlogin active user count: %d\n", num_active_users);
-    printf("====CACHE====\n");
+    printw("\nlogin active user count: %d\n", num_active_users);
+    refresh();
+    printw("====CACHE====\n");
+    refresh();
     for (int i = 0; i < num_active_users; i++) {
-        printf("dsply_name: %s  ip_addr: %s  fd: %d, access_time: %ld\n",
+        printw("dsply_name: %s  ip_addr: %s  fd: %d, access_time: %ld\n",
                cache[i].dsply_name, cache[i].ip_address, cache[i].fd, cache[i].access_time);
+        refresh();
     }
 }
 
