@@ -69,5 +69,6 @@ void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connect
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user);
 int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users);
 
 #endif //CHAT_SERVER_SERVER_H

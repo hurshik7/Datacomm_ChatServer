@@ -79,13 +79,13 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             if (header.version_type.type == TYPE_CREATE) {
                 // TODO add terminate_and_restablish_connection check here
                 result = read_and_login_user(fd, token, clnt_addr, cache);
-                if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
-                    int terminate = find_duplicate_user(cache, get_num_connected_users(cache));
-                    send_logout_user_response(terminate, header, result, token, clnt_addr);
-                    send_login_user_response(fd, header, 0, token, clnt_addr);
-                } else {
+//                if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
+//                    int terminate = find_duplicate_user(cache, get_num_connected_users(cache));
+//                    send_logout_user_response(terminate, header, result, token, clnt_addr);
+//                    send_login_user_response(fd, header, 0, token, clnt_addr);
+//                } else {
                     send_login_user_response(fd, header, result, token, clnt_addr);
-                }
+//                }
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -101,6 +101,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 //            assert(!"This should not be here");
             // Check object type being sent
             printw("object type: %hhu\n", header.object);
+            refresh();
     }
 
     return 0;
@@ -252,17 +253,13 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     int active_users = get_num_connected_users(cache);
     for (int i = 0; i < active_users; i++) {
         printw("\n index: %d  display name: %s\n", i, cache[i].dsply_name);
+        refresh();
         if (strcmp(cache[i].dsply_name, user_account->display_name) == 0) {
-            printw("\n%s\n", "first check");
             if (strcmp(cache[i].ip_address, clnt_addr) != 0) {
-                printw("\n%s\n", "second check");
                 if (user_account->online_status == 1) {
-                    printw("\n%s\n", "final check");
                     goto terminate_and_restablish_connection;
                 }
             }
-        } else {
-            printw("%s", "You are already signed in.\n");
         }
     }
 
@@ -273,7 +270,13 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
-    insert_user_in_cache(fd, cache, user_account);
+    if (find_connected_user_with_same_cred(user_account, cache, get_num_connected_users(cache)) == true &&
+            get_num_connected_users(cache) > 0) {
+        printw("===Restarting your session.===");
+        refresh();
+    } else {
+        insert_user_in_cache(fd, cache, user_account);
+    }
 
     free(user_account);
     free(login_info);
@@ -293,6 +296,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     }
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
     printw("\n%s\n", "reached terminate_and_restablish_connection");
+    refresh();
     // store user in active user cache upon successful login
     insert_user_in_cache(fd, cache, user_account);
     return TERMINATE_AND_RESTABLISH_CONNECTION;
@@ -628,6 +632,29 @@ int find_duplicate_user(connected_user* cache, int active_users)
         }
     }
     return found_duplicate ? min_fd : -1;
+}
+
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users)
+{
+    // extract the ip addr from the sockaddr_in structure in the user_account_t struct
+    char user_account_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(user_account->sock_addr.sin_addr), user_account_ip, INET_ADDRSTRLEN);
+
+    if (num_users == 0) {
+        return false;
+    }
+
+    // iterate through the connected_users array and compare ip addr
+    for (int i = 0; i < num_users; i++) {
+        if (strcmp(user_account_ip, conn_users[i].ip_address) == 0 &&
+        strcmp(user_account->display_name, conn_users[i].dsply_name) == 0) {
+            // Found a connected user with the same ip addr and dsply name
+            return true;
+        }
+    }
+
+    // no connected user with the same ip addr and dsply name combo found
+    return false;
 }
 
 
