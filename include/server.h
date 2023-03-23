@@ -27,6 +27,7 @@
 
 #define ERROR_LOGIN_INVALID_CREDENTIALS (1)
 #define ERROR_LOGIN_DOES_NOT_EXIST (2)
+#define TERMINATE_AND_RESTABLISH_CONNECTION (9)
 
 #define ERROR_LOGOUT_INVALID_FIELDS (1)
 #define ERROR_LOGOUT_USER_MISMATCH_ADDRESS (2)
@@ -45,8 +46,10 @@ typedef struct chat_header {
 } chat_header_t;
 
 typedef struct {
+    int fd;
     char* dsply_name;
     char* ip_address;
+    time_t access_time;
 } connected_user;
 
 int handle_request(int fd, const char* clnt_addr, connected_user* cache);
@@ -62,7 +65,10 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int get_num_connected_users(connected_user* cache);
-void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user);
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user);
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user);
+int cmp_users(const void* a, const void* b);
+int find_duplicate_user(connected_user* users, int n);
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users);
 
 #endif //CHAT_SERVER_SERVER_H

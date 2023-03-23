@@ -1,12 +1,13 @@
 #include "my_ndbm.h"
 #include "server.h"
 #include "util.h"
+#include "ncurses_ui.h"
 #include <assert.h>
-#include <ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #define MAX_CLIENTS (255)
 
@@ -76,8 +77,15 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
         case OBJECT_AUTH:
             // it relates to login(CREATE), logout(DESTROY)
             if (header.version_type.type == TYPE_CREATE) {
+                // TODO add terminate_and_restablish_connection check here
                 result = read_and_login_user(fd, token, clnt_addr, cache);
-                send_login_user_response(fd, header, result, token, clnt_addr);
+//                if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
+//                    int terminate = find_duplicate_user(cache, get_num_connected_users(cache));
+//                    send_logout_user_response(terminate, header, result, token, clnt_addr);
+//                    send_login_user_response(fd, header, 0, token, clnt_addr);
+//                } else {
+                    send_login_user_response(fd, header, result, token, clnt_addr);
+//                }
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -89,15 +97,11 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             }
             break;
         default:
-            printw("version: %d\n", header.version_type.version);
-            printw("type: %d\n", header.version_type.type);
-            printw("object: %d\n", header.object);
-            printw("body size: %d\n", header.body_size);
-            char temp_buffer[BUFSIZ] = { 0, };
-            read(fd, temp_buffer, header.body_size);
-            printw("body: %s\n", temp_buffer);
 //            perror("[SERVER]Error: wrong object number");
 //            assert(!"This should not be here");
+            // Check object type being sent
+            printw("object type: %hhu\n", header.object);
+            refresh();
     }
 
     return 0;
@@ -244,6 +248,19 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
+
+    // check to see if a user is logging in from a different ip addr
+    int active_users = get_num_connected_users(cache);
+    for (int i = 0; i < active_users; i++) {
+        if (strcmp(cache[i].dsply_name, user_account->display_name) == 0) {
+            if (strcmp(cache[i].ip_address, clnt_addr) != 0) {
+                if (user_account->online_status == 1) {
+                    goto terminate_and_restablish_connection;
+                }
+            }
+        }
+    }
+
     if (user_account != NULL) {
         login_user_account_malloc_or_null(user_account, clnt_addr);
         insert_user_account(user_account);
@@ -251,9 +268,13 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
-    insert_user_in_cache(cache, user_account);
-    // TODO remove testing print statement
-    printf("CACHE\ndisplay name: %s  ip address: %s\n", cache[0].dsply_name, cache[0].ip_address);
+    if (find_connected_user_with_same_cred(user_account, cache, get_num_connected_users(cache)) == true &&
+            get_num_connected_users(cache) > 0) {
+        printw("===Restarting your session.===");
+        refresh();
+    } else {
+        insert_user_in_cache(fd, cache, user_account);
+    }
 
     free(user_account);
     free(login_info);
@@ -265,6 +286,18 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     error_exit_invalid_credentials:
     free(login_info);
     return ERROR_LOGIN_INVALID_CREDENTIALS;
+    terminate_and_restablish_connection:
+    if (user_account != NULL) {
+        logout_user_account_malloc_or_null(user_account);
+        login_user_account_malloc_or_null(user_account, clnt_addr);
+        insert_user_account(user_account);
+    }
+    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
+    printw("\n%s\n", "reached terminate_and_restablish_connection");
+    refresh();
+    // store user in active user cache upon successful login
+    insert_user_in_cache(fd, cache, user_account);
+    return TERMINATE_AND_RESTABLISH_CONNECTION;
 }
 
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
@@ -443,7 +476,6 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         perror("send body (send_create_user_response)");
         return -1;
     }
-//    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     refresh();
     return 0;
@@ -482,7 +514,8 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
         perror("send body (send_create_user_response)");
         return -1;
     }
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     return 0;
 }
 
@@ -509,6 +542,10 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
             strcpy(body, "412\3\0");
             strcat(body, "User is not currently online");
             strcat(body, token);
+        } else if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
+            strcpy(body, "333\3\0");
+            strcat(body, "Account has been accessed on another device");
+            strcat(body, token);
         } else {
             assert(!"should not be here");
         }
@@ -528,7 +565,8 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         return -1;
     }
 
-    printf("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
     close(fd);
     return 0;
 }
@@ -537,7 +575,6 @@ int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {
-        // TODO remove testing print statement
         if (n <= MAX_CLIENTS && cache[i].dsply_name == NULL) {
             return n;
         } else if (cache[i].dsply_name[0] != '\0') {
@@ -547,39 +584,81 @@ int get_num_connected_users(connected_user* cache)
     return n;
 }
 
-void insert_user_in_cache(connected_user* cache, user_account_t* connecting_user)
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user)
 {
     int num_active_users = get_num_connected_users(cache);
-    // TODO remove testing print statement
-    printf("\nlogin active user count: %d\n", num_active_users);
-    for (int i = 0; i < num_active_users; i++) {
-        printf("what's in my cache? %s\n", cache[i].dsply_name);
-    }
-    connected_user insert_user = {connecting_user->display_name, (char*)&connecting_user->sock_addr};
+    time_t current_time = time(NULL);
+    connected_user insert_user = {fd, connecting_user->display_name,
+                                  (char*)&connecting_user->sock_addr, current_time};
     cache[num_active_users] = insert_user;
     num_active_users++;
     // TODO remove testing print statement
-    printf("\nlogin active user count: %d\n", num_active_users);
+    printw("\nlogin active user count: %d\n", num_active_users);
+    refresh();
+    printw("====CACHE====\n");
+    refresh();
     for (int i = 0; i < num_active_users; i++) {
-        printf("what's in my cache? %s\n", cache[i].dsply_name);
+        printw("dsply_name: %s  ip_addr: %s  fd: %d, access_time: %ld\n",
+               cache[i].dsply_name, cache[i].ip_address, cache[i].fd, cache[i].access_time);
+        refresh();
     }
 }
 
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user)
 {
     int num_active_users = get_num_connected_users(cache);
-    // TODO fix problem removing user from active user cache
     for (int i = 0; i < num_active_users; i++) {
         if (strcmp(cache[i].dsply_name, connecting_user->display_name) == 0) {
             for (int j = i; j < num_active_users - 1; j++) {
                 cache[j] = cache[j+1];
             }
-            // TODO remove testing print statement
-            printf("\nlogout active user count: %d\n", num_active_users);
             num_active_users--;
-            // TODO remove testing print statement
-            printf("\nlogout active user count: %d\n", num_active_users);
             break;
         }
     }
 }
+
+int find_duplicate_user(connected_user* cache, int active_users)
+{
+    int min_fd = 4;
+    int found_duplicate = 0;
+
+    for (int i = 0; i < active_users - 1; i++) {
+        for (int j = i + 1; j < active_users; j++) {
+            if (strcmp(cache[i].dsply_name, cache[j].dsply_name) == 0 &&
+                strcmp(cache[i].ip_address, cache[j].ip_address) != 0) {
+                found_duplicate = 1;
+                int lower_fd = cache[i].fd < cache[j].fd ? cache[i].fd : cache[j].fd;
+                if (lower_fd < min_fd) {
+                    min_fd = lower_fd;
+                }
+            }
+        }
+    }
+    return found_duplicate ? min_fd : -1;
+}
+
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users)
+{
+    // extract the ip addr from the sockaddr_in structure in the user_account_t struct
+    char user_account_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(user_account->sock_addr.sin_addr), user_account_ip, INET_ADDRSTRLEN);
+
+    if (num_users == 0) {
+        return false;
+    }
+
+    // iterate through the connected_users array and compare ip addr
+    for (int i = 0; i < num_users; i++) {
+        if (strcmp(user_account_ip, conn_users[i].ip_address) == 0 &&
+        strcmp(user_account->display_name, conn_users[i].dsply_name) == 0) {
+            // Found a connected user with the same ip addr and dsply name
+            return true;
+        }
+    }
+
+    // no connected user with the same ip addr and dsply name combo found
+    return false;
+}
+
+
