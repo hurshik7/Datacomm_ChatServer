@@ -593,7 +593,7 @@ void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connect
     cache[num_active_users] = insert_user;
     num_active_users++;
     // TODO remove testing print statement
-    printw("\nlogin active user count: %d\n", num_active_users);
+    printw("\nActive user count: %d\n", num_active_users);
     refresh();
     printw("====CACHE====\n");
     refresh();
@@ -615,6 +615,17 @@ void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user
             num_active_users--;
             break;
         }
+    }
+
+    // TODO remove testing print statement
+    printw("\nActive user count: %d\n", num_active_users);
+    refresh();
+    printw("====CACHE====\n");
+    refresh();
+    for (int i = 0; i < num_active_users; i++) {
+        printw("dsply_name: %s  ip_addr: %s  fd: %d, access_time: %ld\n",
+               cache[i].dsply_name, cache[i].ip_address, cache[i].fd, cache[i].access_time);
+        refresh();
     }
 }
 

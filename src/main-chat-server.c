@@ -193,7 +193,7 @@ int run_server(struct options* opts)
                     case POLLIN:
                         // read request (data is ready)
 //                        printf("data from pollfds[%d]\n", i);
-                        printw("data from pollfds[%d]\n", i);
+                        printw("\ndata from pollfds[%d]\n", i);
                         refresh();
                         if (handle_request(pollfds[i].fd, client_addrs[i], active_users) != 0) {
                             continue;
