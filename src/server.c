@@ -462,12 +462,9 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
             assert(!"should not be here");
         }
     }
-    header.body_size = strlen(body);
-    uint16_t body_size = header.body_size;
-    header.body_size = htons(header.body_size);
-    uint32_t header_int;
-    memcpy(&header_int, &header, sizeof(chat_header_t));
-    header_int = htonl(header_int);
+
+    uint32_t header_int = create_response_header(&header);
+    uint16_t body_size = strlen(body);
     if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -500,12 +497,9 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
             assert(!"should not be here");
         }
     }
-    header.body_size = strlen(body);
-    uint16_t body_size = header.body_size;
-    header.body_size = htons(header.body_size);
-    uint32_t header_int;
-    memcpy(&header_int, &header, sizeof(chat_header_t));
-    header_int = htonl(header_int);
+
+    uint32_t header_int = create_response_header(&header);
+    uint16_t body_size = strlen(body);
     if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -550,12 +544,9 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
             assert(!"should not be here");
         }
     }
-    header.body_size = strlen(body);
-    uint16_t body_size = header.body_size;
-    header.body_size = htons(header.body_size);
-    uint32_t header_int;
-    memcpy(&header_int, &header, sizeof(chat_header_t));
-    header_int = htonl(header_int);
+
+    uint32_t header_int = create_response_header(&header);
+    uint16_t body_size = strlen(body);
     if (write(fd, &header_int, sizeof(chat_header_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -672,4 +663,25 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
     return false;
 }
 
+uint32_t create_response_header(const chat_header_t* header)
+{
+    uint32_t serialized_header;
+    uint32_t version = 0;
+    uint32_t type = 0;
+    uint32_t object = 0;
+    uint32_t body_size = 0;
 
+    version = header->version_type.version;
+    type = header->version_type.type;
+    object = header->object;
+    body_size = header->body_size;
+
+    version <<= 28;
+    type <<= 24;
+    object <<= 16;
+
+    serialized_header = (version | type | object | body_size);
+
+    serialized_header = htonl(serialized_header);
+    return serialized_header;
+}
