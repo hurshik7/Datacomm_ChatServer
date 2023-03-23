@@ -16,9 +16,9 @@
 #define DEFAULT_LIST_SIZE (64)
 
 
-#define DB_LOGIN_INFO "user_login_info"
-#define DB_DISPLAY_NAMES "display_names"
-#define DB_USER_ACCOUNT "user_account_info"
+#define DB_LOGIN_INFO "../user_login_info"
+#define DB_DISPLAY_NAMES "../display_names"
+#define DB_USER_ACCOUNT "../user_account_info"
 
 
 typedef struct UserLoginInfo {
