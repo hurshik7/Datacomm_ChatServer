@@ -701,8 +701,8 @@ void view_active_users(connected_user* cache)
         for (; i < num_active_users; i++)
         {
 
-            printw("display_name: %s, fd: %d,\n",
-                   cache[i].dsply_name, cache[i].fd);
+            printw("display_name: %s, fd: %d, ip_addr: %s, access_time: %ld\n",
+                   cache[i].dsply_name, cache[i].fd, cache[i].ip_address, cache[i].access_time);
             refresh();
         }
     }
