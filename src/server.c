@@ -688,17 +688,22 @@ uint32_t create_response_header(const chat_header_t* header)
 
 void view_active_users(connected_user* cache)
 {
+    int i = 0;
     int num_active_users = get_num_connected_users(cache);
     //Print # of active users
-    printw("\nActive user count: %d\n", num_active_users);
-    refresh();
-
-    refresh();
-    for (int i = 0; i < num_active_users; i++) {
-        printw("display_name: %s, fd: %d,\n",
-               cache[i].dsply_name, cache[i].fd);
+    if(cache[i].dsply_name == NULL) {
+        printw("There are no active users.\n");
         refresh();
+    } else
+    {
+        printw("\nActive user count: %d\n", num_active_users);
+        refresh();
+        for (; i < num_active_users; i++)
+        {
+
+            printw("display_name: %s, fd: %d,\n",
+                   cache[i].dsply_name, cache[i].fd);
+            refresh();
+        }
     }
-
-
 }
