@@ -13,7 +13,8 @@ void print_menu(WINDOW *menu_win, int highlight)
     const char* choices[] = {
             "1. Run server",
             "2. View database",
-            "3. Quit",
+            "3. View Active Users",
+            "4. Quit",
     };
 
     x = 2;
@@ -21,7 +22,7 @@ void print_menu(WINDOW *menu_win, int highlight)
 
     box(menu_win, 0, 0);
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 4; i++) {
         if (highlight == i + 1) {
             wattron(menu_win, A_REVERSE);
             mvwprintw(menu_win, y, x, "%s", choices[i]);
@@ -60,12 +61,12 @@ int navigate_menu(WINDOW *menu_win)
             case KEY_UP:
                 choice--;
                 if (choice < 1) {
-                    choice = 3;
+                    choice = 4;
                 }
                 break;
             case KEY_DOWN:
                 choice++;
-                if (choice > 3) {
+                if (choice > 4) {
                     choice = 1;
                 }
                 break;
