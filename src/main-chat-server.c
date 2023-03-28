@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
                 run_db_viewer_wrapper();
                 break;
             case 3:
+                run_active_user_viewer(active_users);
+            case 4:
                 quit = true;
                 break;
             default:

@@ -18,8 +18,8 @@ void print_menu(WINDOW *menu_win, int highlight)
             "4. Quit",
     };
 
-    x = 2;
-    y = 2;
+    x = 3;
+    y = 3;
 
     box(menu_win, 0, 0);
 
