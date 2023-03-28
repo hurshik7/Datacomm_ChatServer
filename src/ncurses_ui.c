@@ -1,5 +1,6 @@
 #include "db_viewer.h"
 #include "ncurses_ui.h"
+#include "server.h"
 #include <pthread.h>
 
 
@@ -13,15 +14,16 @@ void print_menu(WINDOW *menu_win, int highlight)
     const char* choices[] = {
             "1. Run server",
             "2. View database",
-            "3. Quit",
+            "3. View Active Users",
+            "4. Quit",
     };
 
-    x = 2;
-    y = 2;
+    x = 3;
+    y = 3;
 
     box(menu_win, 0, 0);
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 4; i++) {
         if (highlight == i + 1) {
             wattron(menu_win, A_REVERSE);
             mvwprintw(menu_win, y, x, "%s", choices[i]);
@@ -60,12 +62,12 @@ int navigate_menu(WINDOW *menu_win)
             case KEY_UP:
                 choice--;
                 if (choice < 1) {
-                    choice = 3;
+                    choice = 4;
                 }
                 break;
             case KEY_DOWN:
                 choice++;
-                if (choice > 3) {
+                if (choice > 4) {
                     choice = 1;
                 }
                 break;
@@ -111,3 +113,99 @@ void run_db_viewer_wrapper(void)
     clear();
     refresh();
 }
+
+void run_active_user_viewer(connected_user* users)
+{
+    // Clear screen
+    clear();
+    refresh();
+
+    view_active_users(users);
+
+    //Wait for a key press to close active user view
+    getch();
+
+    //Clear screen.
+    clear();
+    refresh();
+
+}
+
+
+
+//Version 1 of our gui
+//to run ncurses
+// gcc -o hello main.c -lncurses
+//int main(void)
+//{
+//    // START NCURSES
+//    initscr();
+//    cbreak();
+//
+//    //Max screen size
+//    int y_Max, x_Max;
+//    getmaxyx(stdscr, y_Max, x_Max);
+//
+//    //create window for input
+//    WINDOW * menuwin = newwin(7, x_Max - 12, y_Max - 8, 5);
+//    box(menuwin, 0, 0);
+//    refresh();
+//    wrefresh(menuwin);
+//
+//    //Enable arrow keys
+//    keypad(menuwin, true);
+//
+//    char choices[5][256] = {"Start Server", "End Server", "Show Database", "Admin", "Exit"};
+//
+//    int choice;
+//    int highlight = 0;
+//
+//    while(1)
+//    {
+//        for (int i = 0; i < 4; i++)
+//        {
+//            if (i == highlight)
+//                wattron(menuwin, A_STANDOUT);
+//                mvwprintw(menuwin, i + 1, 1, choices[i]);
+//                wattroff(menuwin, A_STANDOUT);
+//        }
+//            choice = wgetch(menuwin);
+//            switch(choice)
+//            {
+//                case KEY_UP:
+//                    highlight--;
+//                    if(highlight == -1)
+//                    {
+//                        highlight = 0;
+//                    }
+//                    break;
+//                case KEY_DOWN:
+//                    highlight++;
+//                    if(highlight == 4)
+//                    {
+//                        highlight = 3;
+//                    }
+//                    break;
+//                default:
+//                    break;
+//            }
+//            if(choice == 10)
+//            {
+//                break;
+//            }
+//        }
+//
+//    if (strcmp(choices[highlight], choices[0]) == 0)
+//    {
+//        printw("Server is running...");
+//        run_server(argc,argv);
+//    }
+//    printw("Your choice was: %s", choices[highlight]);
+//    //Ensuring program waits before exiting
+//    getch();
+//    endwin();
+//
+//
+//    return 0;
+//}
+
