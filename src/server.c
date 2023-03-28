@@ -133,9 +133,9 @@ int read_header(int fd, chat_header_t *header_out)
 
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
 {
-    char buffer[DEFUALT_BUFFER];
-    memset(buffer, '\0', DEFUALT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFUALT_BUFFER);
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
     if (nread <= 0) {
         perror("[SERVER]Error: read body");
         return -1;
@@ -206,9 +206,9 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
 
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
-    char buffer[DEFUALT_BUFFER];
-    memset(buffer, '\0', DEFUALT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFUALT_BUFFER);
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
     if (nread <= 0) {
         perror("[SERVER]Error: read body");
         return -1;
@@ -302,9 +302,9 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
 
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
-    char buffer[DEFUALT_BUFFER];
-    memset(buffer, '\0', DEFUALT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFUALT_BUFFER);
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
     if (nread <= 0) {
         perror("[SERVER]Error: read body");
         return -1;
@@ -446,7 +446,7 @@ user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc)
 
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
-    char body[DEFUALT_BUFFER] = { '\0', };
+    char body[DEFAULT_BUFFER] = {'\0', };
     if (result == 0) {
         strcpy(body, "201\3\0");
         strcat(body, token);
@@ -480,7 +480,7 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
 
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
-    char body[DEFUALT_BUFFER] = { '\0', };
+    char body[DEFAULT_BUFFER] = {'\0', };
     if (result == 0) {
         strcpy(body, "200\3\0");
         strcat(body, token);
@@ -515,7 +515,7 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
 
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
-    char body[DEFUALT_BUFFER] = { '\0', };
+    char body[DEFAULT_BUFFER] = {'\0', };
     if (result == 0) {
         strcpy(body, "200\3\0");
         strcat(body, token);

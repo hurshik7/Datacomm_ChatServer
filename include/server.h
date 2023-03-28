@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 
-#define DEFUALT_BUFFER (1024)
+#define DEFAULT_BUFFER (1024)
 #define HEADER_SIZE (4)
 #define CURRENT_VERSION (1)
 #define ERROR_WRONG_VERSION (2)
