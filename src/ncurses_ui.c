@@ -1,5 +1,6 @@
 #include "db_viewer.h"
 #include "ncurses_ui.h"
+#include "server.h"
 #include <pthread.h>
 
 
@@ -111,6 +112,23 @@ void run_db_viewer_wrapper(void)
     // Clear the screen again
     clear();
     refresh();
+}
+
+void run_active_user_viewer(connected_user* users)
+{
+    // Clear screen
+    clear();
+    refresh();
+
+    view_active_users(users);
+
+    //Wait for a key press to close active user view
+    getch();
+
+    //Clear screen.
+    clear();
+    refresh();
+
 }
 
 

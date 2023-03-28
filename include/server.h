@@ -71,5 +71,6 @@ int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users);
 uint32_t create_response_header(const chat_header_t* header);
+void view_active_users(connected_user* cache);
 
 #endif //CHAT_SERVER_SERVER_H

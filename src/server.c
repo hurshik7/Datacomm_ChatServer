@@ -685,3 +685,20 @@ uint32_t create_response_header(const chat_header_t* header)
     serialized_header = htonl(serialized_header);
     return serialized_header;
 }
+
+void view_active_users(connected_user* cache)
+{
+    int num_active_users = get_num_connected_users(cache);
+    //Print # of active users
+    printw("\nActive user count: %d\n", num_active_users);
+    refresh();
+
+    refresh();
+    for (int i = 0; i < num_active_users; i++) {
+        printw("display_name: %s, fd: %d,\n",
+               cache[i].dsply_name, cache[i].fd);
+        refresh();
+    }
+
+
+}
