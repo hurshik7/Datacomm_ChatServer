@@ -14,6 +14,7 @@
 #define UUID_LEN (37)
 #define CLNT_IP_ADDR_LENGTH (16)
 #define DEFAULT_LIST_SIZE (64)
+#define TIMESTAMP_SIZE
 
 
 #define DB_LOGIN_INFO "../user_login_info"
@@ -44,6 +45,14 @@ typedef struct ChannelInfo {
     char channel_name[TOKEN_NAME_LENGTH];
     bool publicity;
 } channel_info_t;
+
+typedef struct MessageInfo {
+    char message_id[UUID_LEN];
+    char user_id[UUID_LEN];
+    char channel_id[TOKEN_NAME_LENGTH];
+    char* message_content;
+    uint8_t time_stamp[TIMESTAMP_SIZE];
+} message_info_t;
 
 DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);

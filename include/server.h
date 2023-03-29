@@ -34,6 +34,11 @@
 #define ERROR_LOGOUT_ADMIN_USER_NOT_EXIST (3)
 #define ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE (4)
 
+#define ERROR_INVALID_REQUEST (1)
+#define ERROR_CHANNEL_DOES_NOT_EXIST (2)
+#define ERROR_ADMIN_DOES_NOT_EXIST (3)
+#define ERROR_USER_DOES_NOT_EXIST (4)
+
 typedef struct version_type {
     uint8_t  version:4;
     uint8_t  type:4;
@@ -57,6 +62,7 @@ int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH]);
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH]);
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr);
@@ -64,12 +70,13 @@ user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc);
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 int get_num_connected_users(connected_user* cache);
-void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user);
-void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user);
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, int num_active_users);
+void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int num_active_users);
 int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
-bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users);
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
 
