@@ -34,6 +34,7 @@
 #define ERROR_LOGOUT_ADMIN_USER_NOT_EXIST (3)
 #define ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE (4)
 
+
 typedef struct version_type {
     uint8_t  version:4;
     uint8_t  type:4;
@@ -64,12 +65,13 @@ user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc);
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 int get_num_connected_users(connected_user* cache);
-void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user);
-void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user);
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, int num_active_users);
+void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int num_active_users);
 int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
-bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users);
+bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
 
