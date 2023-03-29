@@ -37,8 +37,8 @@ int main(void) {
     }
 
     // prepare the sockaddr_in structure
-//    server.sin_addr.s_addr = inet_addr("192.168.1.85");
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
+//    server.sin_addr.s_addr = inet_addr("192.168.0.107");
     server.sin_family = AF_INET;
     server.sin_port = htons(5050);
 
@@ -147,7 +147,7 @@ int main(void) {
         printf("type: %d\n", test_header.version_type.type);
         printf("object: %d\n", test_header.object);
 
-        char body[] = "bennychao\3monkey123\0";
+        char body[] = "test\3test\0";
         test_header.body_size = (uint16_t) strlen(body);
         uint16_t body_size = test_header.body_size;
         test_header.body_size = htons(test_header.body_size);
