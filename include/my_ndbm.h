@@ -51,7 +51,7 @@ typedef struct MessageInfo {
     char channel_name[TOKEN_NAME_LENGTH];
     char* message_content;
     uint8_t time_stamp[TIMESTAMP_SIZE];
-};
+} message_info_t;
 
 DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
