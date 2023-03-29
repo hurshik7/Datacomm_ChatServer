@@ -81,6 +81,38 @@ user_account_t* get_user_account_malloc_or_null(char* user_token)
     return user_acc;
 }
 
+message_info_t* get_message_malloc_or_null(char* user_token)
+{
+    DBM* message_db = open_db_or_null(DB_MESSAGES, O_RDONLY | O_SYNC);
+    if (message_db == NULL) {
+        return NULL;
+    }
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_token;
+    key.dsize = strlen(user_token);
+
+    value = dbm_fetch(message_db, key);
+    if (value.dptr == NULL) {
+        dbm_close(message_db);
+        perror("[DB]Error: User not found.");
+        return NULL;
+    }
+
+    message_info_t * message = (message_info_t *) malloc(sizeof(message_info_t));
+    if (message == NULL) {
+        dbm_close(message_db);
+        perror("[DB]Error: malloc()");
+        return NULL;
+    }
+
+    memcpy(message, value.dptr, sizeof(message_info_t));
+    dbm_close(message_db);
+    return message;
+}
+
 bool check_duplicate_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES, O_RDONLY | O_SYNC);
@@ -191,7 +223,7 @@ int insert_message(message_info_t * message)
 {
     DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_messages == NULL) {
-        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        perror("[DB]Error: Failed to open DB_MESSAGES DB");
         return -1;
     }
 
