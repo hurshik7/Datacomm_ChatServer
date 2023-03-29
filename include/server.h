@@ -34,6 +34,10 @@
 #define ERROR_LOGOUT_ADMIN_USER_NOT_EXIST (3)
 #define ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE (4)
 
+#define ERROR_INVALID_REQUEST (1)
+#define ERROR_CHANNEL_DOES_NOT_EXIST (2)
+#define ERROR_ADMIN_DOES_NOT_EXIST (3)
+#define ERROR_USER_DOES_NOT_EXIST (4)
 
 typedef struct version_type {
     uint8_t  version:4;
