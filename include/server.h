@@ -62,6 +62,7 @@ int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH]);
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH]);
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr);
