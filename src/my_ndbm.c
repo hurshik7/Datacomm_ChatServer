@@ -187,6 +187,32 @@ int insert_user_login(user_login_t* user_login)
     return 0;
 }
 
+int insert_message(message_info_t * message)
+{
+    DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (user_messages == NULL) {
+        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = message->message_id;
+    key.dsize = strlen(message->message_id);
+    value.dptr = message;
+    value.dsize = sizeof(message_info_t );
+
+    if (dbm_store(user_messages, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert user login information\n");
+        dbm_close(user_messages);
+        return -1;
+    }
+
+    dbm_close(user_messages);
+    return 0;
+}
 
 /*
 void insertUser(DBM *db)
