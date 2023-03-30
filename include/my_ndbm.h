@@ -15,6 +15,7 @@
 #define CLNT_IP_ADDR_LENGTH (16)
 #define DEFAULT_LIST_SIZE (64)
 #define TIMESTAMP_SIZE (8)
+#define MAX_MESSAGE_SIZE (974)
 
 
 #define DB_LOGIN_INFO "../user_login_info"
@@ -50,7 +51,7 @@ typedef struct ChannelInfo {
 typedef struct MessageInfo {
     char message_id[UUID_LEN];
     char user_id[UUID_LEN];
-    char channel_id[TOKEN_NAME_LENGTH];
+    char channel_id[UUID_LEN];
     char* message_content;
     uint8_t time_stamp[TIMESTAMP_SIZE];
 } message_info_t;

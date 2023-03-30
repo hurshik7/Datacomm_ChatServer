@@ -97,7 +97,7 @@ message_info_t* get_message_malloc_or_null(char* user_token)
     value = dbm_fetch(message_db, key);
     if (value.dptr == NULL) {
         dbm_close(message_db);
-        perror("[DB]Error: User not found.");
+        perror("[DB]Error: Message not found.");
         return NULL;
     }
 
