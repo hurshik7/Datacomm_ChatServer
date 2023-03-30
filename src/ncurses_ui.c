@@ -1,11 +1,16 @@
 #include "db_viewer.h"
 #include "ncurses_ui.h"
 #include "server.h"
+#include <limits.h>
 #include <pthread.h>
 
 
 extern bool server_running;
 extern pthread_t server_thread;
+
+extern char DB_LOGIN_INFO_PATH[PATH_MAX];
+extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
+extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 
 
 void print_menu(WINDOW *menu_win, int highlight)
@@ -41,12 +46,18 @@ void print_menu(WINDOW *menu_win, int highlight)
 
 WINDOW* create_menu_window(void)
 {
-    int menu_height = 9;
-    int menu_width = 80;
-    int menu_startx = (COLS - menu_width) / 2;
-    int menu_starty = (LINES - menu_height) / 2;
-    WINDOW *menu_win = newwin(menu_height, menu_width, menu_starty, menu_startx);
+    int menu_startx = (COLS - MENU_WIDTH) / 2;
+    int menu_starty = (LINES - MENU_HEIGHT) / 2;
+    WINDOW *menu_win = newwin(MENU_HEIGHT, MENU_WIDTH, menu_starty, menu_startx);
     return menu_win;
+}
+
+WINDOW* create_db_path_window(void)
+{
+    int menu_startx = (COLS - DB_PATH_BOX_WIDTH) / 2;
+    int menu_starty = 5;
+    WINDOW *db_win = newwin(DB_PATH_BOX_HEIGHT, DB_PATH_BOX_WIDTH, menu_starty, menu_startx);
+    return db_win;
 }
 
 int navigate_menu(WINDOW *menu_win)
@@ -85,6 +96,18 @@ void print_title(int startx)
     mvprintw(1, startx, TITLE);
     attroff(A_BOLD);
     refresh();
+}
+
+void print_db_paths(WINDOW* db_win, int startx)
+{
+    int y = 1;
+    box(db_win, 0, 0);
+    mvwprintw(db_win, y++, startx, "DB paths");
+    y++;
+    mvwprintw(db_win, y++, startx, "%s: %s", "User Login info", DB_LOGIN_INFO_PATH);
+    mvwprintw(db_win, y++, startx, "%s: %s", "Display names", DB_DISPLAY_NAMES_PATH);
+    mvwprintw(db_win, y, startx, "%s: %s", "User account", DB_USER_ACCOUNT_PATH);
+    wrefresh(db_win);
 }
 
 void init_ncurses(void)
