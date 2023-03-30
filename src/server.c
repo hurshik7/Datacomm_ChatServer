@@ -17,6 +17,12 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     chat_header_t header;
     memset(&header, 0, sizeof(header));
     result = read_header(fd, &header);
+
+    //
+    printw("version: %d, type: %d, object: %d, body-size: %d\n", header.version_type.version, header.version_type.type, header.object, header.body_size);
+    refresh();
+    //
+
     if (result < 0) {
         perror("[SERVER]Error: read_header()");
         return -1;
@@ -33,7 +39,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_user(fd, token);
+                result = read_and_create_user(fd, token, header.body_size);
                 send_create_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
@@ -131,19 +137,23 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
-int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
+int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
-    if (nread <= 0) {
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
         return -1;
     }
 
+    printw("nread: %d, body: %s, sizeof(body): %d\n", nread, buffer, strlen(buffer));
+    refresh();
+
     char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char display_name[TOKEN_NAME_LENGTH] = { '\0', };
     char password[PSWD_MAX_LENGTH] = { '\0', };
+
     char* token = strtok(buffer, "\3"); // login_token
     strncpy(login_token, token, strlen(token));
     token = strtok(NULL, "\3"); // display-name
