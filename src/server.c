@@ -694,8 +694,6 @@ int find_duplicate_user(connected_user* cache, int active_users)
 
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd)
 {
-    assert(user_account != NULL); // ADDED by me.
-
     // extract the ip addr from the sockaddr_in structure in the user_account_t struct
     char user_account_ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(user_account->sock_addr.sin_addr), user_account_ip, INET_ADDRSTRLEN);
