@@ -55,7 +55,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     return login_info;
 }
 
-user_account_t* get_user_account_malloc_or_null(char* user_token)
+user_account_t* get_user_account_malloc_or_null(char* user_uuid)
 {
     DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT_PATH, O_RDONLY | O_SYNC);
     if (user_acc_db == NULL) {
@@ -65,8 +65,8 @@ user_account_t* get_user_account_malloc_or_null(char* user_token)
     memset(&key, 0, sizeof(datum));
     memset(&value, 0, sizeof(datum));
 
-    key.dptr = user_token;
-    key.dsize = strlen(user_token) + 1;
+    key.dptr = user_uuid;
+    key.dsize = UUID_LEN;
 
     value = dbm_fetch(user_acc_db, key);
     if (value.dptr == NULL) {
@@ -125,7 +125,7 @@ int insert_user_account(user_account_t* user_account)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = user_account->user_id;
-    key.dsize = strlen(user_account->user_id) + 1;
+    key.dsize = UUID_LEN;
     value.dptr = user_account;
     value.dsize = sizeof(user_account_t);
 
