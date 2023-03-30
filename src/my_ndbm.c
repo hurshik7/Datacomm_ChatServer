@@ -125,7 +125,7 @@ int insert_user_account(user_account_t* user_account)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = user_account->user_id;
-    key.dsize = strlen(user_account->user_id);
+    key.dsize = strlen(user_account->user_id) + 1;
     value.dptr = user_account;
     value.dsize = sizeof(user_account_t);
 
