@@ -38,7 +38,6 @@ int main(void) {
 
     // prepare the sockaddr_in structure
 //    server.sin_addr.s_addr = inet_addr("192.168.1.85");
-//    server.sin_addr.s_addr = inet_addr("192.168.0.99");
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     server.sin_family = AF_INET;
     server.sin_port = htons(5050);
