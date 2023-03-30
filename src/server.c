@@ -18,8 +18,8 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     memset(&header, 0, sizeof(header));
     result = read_header(fd, &header);
 
-    //
-    printw("version: %d, type: %d, object: %d, body-size: %d\n", header.version_type.version, header.version_type.type, header.object, header.body_size);
+    // log for a header a client sends
+    printw("[Header]version: %d, type: %d, object: %d, body-size: %d\n", header.version_type.version, header.version_type.type, header.object, header.body_size);
     refresh();
     //
 
@@ -147,7 +147,7 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bod
         return -1;
     }
 
-    printw("nread: %d, body: %s, sizeof(body): %d\n", nread, buffer, strlen(buffer));
+    printw("nread: %d, body: %s\n", nread, buffer);
     refresh();
 
     char login_token[TOKEN_NAME_LENGTH] = { '\0', };
@@ -256,10 +256,6 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
     clnt_uuid[strlen(clnt_uuid)] = '\0';
-
-    printw("login_info->uuid: %s\n", login_info->uuid);
-    printw("uuid(copied): %s\n", clnt_uuid);
-    refresh();
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
