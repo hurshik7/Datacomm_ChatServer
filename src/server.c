@@ -255,7 +255,11 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     // store uuid and remove extra char at end of uuid string
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
-    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
+    clnt_uuid[strlen(clnt_uuid)] = '\0';
+
+    printw("login_info->uuid: %s\n", login_info->uuid);
+    printw("uuid(copied): %s\n", clnt_uuid);
+    refresh();
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
@@ -694,6 +698,8 @@ int find_duplicate_user(connected_user* cache, int active_users)
 
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd)
 {
+    assert(user_account != NULL); // ADDED by me.
+
     // extract the ip addr from the sockaddr_in structure in the user_account_t struct
     char user_account_ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(user_account->sock_addr.sin_addr), user_account_ip, INET_ADDRSTRLEN);
