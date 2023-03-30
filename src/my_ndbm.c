@@ -4,9 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-
-#include <ncurses.h>
 
 
 extern char DB_LOGIN_INFO_PATH[PATH_MAX];
@@ -67,11 +64,6 @@ user_account_t* get_user_account_malloc_or_null(char* user_token)
     datum key, value;
     memset(&key, 0, sizeof(datum));
     memset(&value, 0, sizeof(datum));
-
-    // delete this
-    printw("get_user_account() user_token: %s\n", user_token);
-    refresh();
-    // mising 1 character here
 
     key.dptr = user_token;
     key.dsize = strlen(user_token) + 1;
