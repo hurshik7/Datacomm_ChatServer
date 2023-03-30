@@ -18,10 +18,9 @@
 #define MAX_MESSAGE_SIZE (974)
 
 
-#define DB_LOGIN_INFO "../user_login_info"
-#define DB_DISPLAY_NAMES "../display_names"
-#define DB_USER_ACCOUNT "../user_account_info"
-#define DB_MESSAGES "../message_info"
+#define DB_LOGIN_INFO "user_login_info"
+#define DB_DISPLAY_NAMES "display_names"
+#define DB_USER_ACCOUNT "user_account_info"
 
 
 typedef struct UserLoginInfo {
@@ -66,14 +65,6 @@ int insert_display_name(char* display_name, char* uuid);
 int insert_user_login(user_login_t* user_login);
 int insert_message(message_info_t * message);
 
-
-/*
-void insertUser(DBM *db);
-void fetchUser(DBM *db);
-void deleteUser(DBM *db);
-void printAllUsers(DBM *db);
-void optionHandler(DBM* db);
-*/
 
 #endif /* MY_NDBM_H */
 

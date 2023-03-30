@@ -23,9 +23,13 @@ volatile bool server_running;
 static void init_pollfd(struct pollfd* pollfds, int server_sock);
 void* run_server_thread(void* arg);
 int run_server(struct options* opts);
+int setup_db_paths(void);
 
 
 connected_user active_users[MAX_CLIENTS]; // active user cache w/ upper limit of 255 concurrent clients
+char DB_LOGIN_INFO_PATH[PATH_MAX];
+char DB_DISPLAY_NAMES_PATH[PATH_MAX];
+char DB_USER_ACCOUNT_PATH[PATH_MAX];
 
 
 int main(int argc, char *argv[])
@@ -37,8 +41,16 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);                                              // NOLINT(concurrency-mt-unsafe)
     }
 
+    // setup DBs' path
+    int result = setup_db_paths();
+    if (result != EXIT_SUCCESS) {
+        perror("setting up db paths");
+        exit(EXIT_FAILURE);
+    }
+
     init_ncurses();
     WINDOW* menu_win = create_menu_window();
+    WINDOW* db_path_win = create_db_path_window();
     keypad(menu_win, TRUE);
     int choice;
     bool quit = false;
@@ -50,6 +62,7 @@ int main(int argc, char *argv[])
     // Display menu
     while (!quit) {
         print_title(startx);
+        print_db_paths(db_path_win, 2);
         choice = navigate_menu(menu_win);
 
         switch (choice) {
@@ -72,6 +85,7 @@ int main(int argc, char *argv[])
                 break;
             case 3:
                 run_active_user_viewer(active_users);
+                break;
             case 4:
                 quit = true;
                 break;
@@ -219,4 +233,45 @@ int run_server(struct options* opts)
     }
     close(opts->server_sock);
     return 0;
+}
+
+int setup_db_paths(void)
+{
+    memset(DB_USER_ACCOUNT_PATH, '\0', PATH_MAX);
+    memset(DB_LOGIN_INFO_PATH, '\0', PATH_MAX);
+    memset(DB_DISPLAY_NAMES_PATH, '\0', PATH_MAX);
+
+    char temp_login_info_path[PATH_MAX] = { '\0', };
+    char temp_display_names_path[PATH_MAX] = { '\0', };
+    char temp_user_account_info_path[PATH_MAX] = { '\0', };
+
+    const char* home_dir = getenv("HOME");
+    if (home_dir == NULL) {
+        return EXIT_FAILURE;
+    }
+
+    size_t home_dir_len = strlen(home_dir);
+    if (home_dir_len + strlen((const char*) DB_DISPLAY_NAMES_PATH) + 1 >= PATH_MAX
+        || home_dir_len + strlen((const char*) DB_LOGIN_INFO_PATH) + 1 >= PATH_MAX
+        || home_dir_len + strlen((const char*) DB_USER_ACCOUNT_PATH) + 1 >= PATH_MAX) {
+        return EXIT_FAILURE;
+    }
+
+    strcpy(temp_login_info_path, home_dir);
+    strcpy(temp_display_names_path, home_dir);
+    strcpy(temp_user_account_info_path, home_dir);
+
+    strcat(temp_login_info_path, "/");
+    strcat(temp_display_names_path, "/");
+    strcat(temp_user_account_info_path, "/");
+
+    strcat(temp_login_info_path, DB_LOGIN_INFO);
+    strcat(temp_display_names_path, DB_DISPLAY_NAMES);
+    strcat(temp_user_account_info_path, DB_USER_ACCOUNT);
+
+    strncpy(DB_LOGIN_INFO_PATH, temp_login_info_path, PATH_MAX);
+    strncpy(DB_DISPLAY_NAMES_PATH, temp_display_names_path, PATH_MAX);
+    strncpy(DB_USER_ACCOUNT_PATH, temp_user_account_info_path, PATH_MAX);
+
+    return EXIT_SUCCESS;
 }
