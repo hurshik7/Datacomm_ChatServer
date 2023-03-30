@@ -17,9 +17,9 @@
 #define TIMESTAMP_SIZE
 
 
-#define DB_LOGIN_INFO "../user_login_info"
-#define DB_DISPLAY_NAMES "../display_names"
-#define DB_USER_ACCOUNT "../user_account_info"
+#define DB_LOGIN_INFO "user_login_info"
+#define DB_DISPLAY_NAMES "display_names"
+#define DB_USER_ACCOUNT "user_account_info"
 
 
 typedef struct UserLoginInfo {
@@ -62,14 +62,6 @@ int insert_user_account(user_account_t* user_account);
 int insert_display_name(char* display_name, char* uuid);
 int insert_user_login(user_login_t* user_login);
 
-
-/*
-void insertUser(DBM *db);
-void fetchUser(DBM *db);
-void deleteUser(DBM *db);
-void printAllUsers(DBM *db);
-void optionHandler(DBM* db);
-*/
 
 #endif /* MY_NDBM_H */
 
