@@ -17,6 +17,12 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     chat_header_t header;
     memset(&header, 0, sizeof(header));
     result = read_header(fd, &header);
+
+    // log for a header a client sends
+    printw("[Header]version: %d, type: %d, object: %d, body-size: %d\n", header.version_type.version, header.version_type.type, header.object, header.body_size);
+    refresh();
+    //
+
     if (result < 0) {
         perror("[SERVER]Error: read_header()");
         return -1;
@@ -33,7 +39,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_user(fd, token);
+                result = read_and_create_user(fd, token, header.body_size);
                 send_create_user_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
@@ -142,19 +148,24 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
-int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH])
+int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
-    if (nread <= 0) {
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
         return -1;
     }
 
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
     char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char display_name[TOKEN_NAME_LENGTH] = { '\0', };
     char password[PSWD_MAX_LENGTH] = { '\0', };
+
     char* token = strtok(buffer, "\3"); // login_token
     strncpy(login_token, token, strlen(token));
     token = strtok(NULL, "\3"); // display-name
@@ -224,6 +235,10 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         return -1;
     }
 
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
     char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char password[PSWD_MAX_LENGTH] = { '\0', };
     char* token = strtok(buffer, "\3"); // login_token
@@ -255,7 +270,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     // store uuid and remove extra char at end of uuid string
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
-    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
+    clnt_uuid[strlen(clnt_uuid)] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
@@ -321,6 +336,10 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
         return -1;
     }
 
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
     char* token = strtok(buffer, "\3"); // login_token
     strncpy(display_name, token, strlen(token));
@@ -330,7 +349,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
 
     char* clnt_uuid = malloc(UUID_LEN);
     strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
-    clnt_uuid[strlen(clnt_uuid) - 1] = '\0';
+    clnt_uuid[strlen(clnt_uuid)] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 

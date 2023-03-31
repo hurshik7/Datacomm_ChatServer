@@ -163,6 +163,11 @@ int run_server(struct options* opts)
         fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
     }
 
+    // initialize active users
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        memset(&(active_users[i]), 0, sizeof(connected_user));
+    }
+
     // Initialize the pollfd structure for the poll-server socket
     struct pollfd pollfds[MAX_CLIENTS];
     init_pollfd(pollfds, opts->server_sock);
