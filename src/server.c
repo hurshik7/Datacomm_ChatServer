@@ -11,6 +11,8 @@
 
 #define MAX_CLIENTS (255)
 
+extern connected_user active_users[MAX_CLIENTS];
+
 int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 {
     int result;
@@ -54,8 +56,8 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             break;
         case OBJECT_CHANNEL:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_channel(fd, token, header.body_size);
-                //send_create_channel_response(fd, header, result, token, clnt_addr);
+                result = read_and_create_channel(fd, token, header.body_size, clnt_addr);
+                send_create_channel_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -266,8 +268,8 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
     // check to see if a user is logging in from a different ip addr
-    int active_users = get_num_connected_users(cache);
-    for (int i = 0; i < active_users; i++) {
+    int active_users_count = get_num_connected_users(cache);
+    for (int i = 0; i < active_users_count; i++) {
         if (strcmp(cache[i].dsply_name, user_account->display_name) == 0) {
             if (strcmp(cache[i].ip_address, clnt_addr) != 0) {
                 if (user_account->online_status == 1) {
@@ -688,13 +690,13 @@ void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user
     }
 }
 
-int find_duplicate_user(connected_user* cache, int active_users)
+int find_duplicate_user(connected_user* cache, int active_users_count)
 {
     int min_fd = 4;
     int found_duplicate = 0;
 
-    for (int i = 0; i < active_users - 1; i++) {
-        for (int j = i + 1; j < active_users; j++) {
+    for (int i = 0; i < active_users_count - 1; i++) {
+        for (int j = i + 1; j < active_users_count; j++) {
             if (strcmp(cache[i].dsply_name, cache[j].dsply_name) == 0 &&
                 strcmp(cache[i].ip_address, cache[j].ip_address) != 0) {
                 found_duplicate = 1;
@@ -772,8 +774,9 @@ void view_active_users(connected_user* cache)
     }
 }
 
-int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH])
 {
+    int result;
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
     ssize_t nread = read(fd, buffer, body_size);
@@ -791,15 +794,11 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     bool publicity = false;
 
     char* token = strtok(buffer, "\3"); // channel_name
-    if (token == buffer) {
-        // TODO wrong request goto error response 400
-
-    }
     strncpy(channel_name, token, strlen(token));
 
     token = strtok(NULL, "\3"); // display-name
     if (token == NULL) {
-        // TODO wrong request, goto error response 400
+        return ERROR_CREATE_CHANNEL_400;
     }
     strncpy(display_name, token, strlen(token));
 
@@ -807,14 +806,60 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     if (strcmp(token, "1") == 0) {
         publicity = true;
     } else if (token == NULL || strlen(token) != 1) {
-        // TODO wrong request goto error response 400
-
+        return ERROR_CREATE_CHANNEL_400;
     }
 
-    // TODO create channel
+    char* dis_name_in_cache = get_display_name_in_cache_malloc_or_null(clnt_addr);
+    if (dis_name_in_cache == NULL) {
+        return ERROR_CREATE_CHANNEL_500;
+    }
+    bool display_name_exist = check_duplicate_display_name(display_name);
 
+    if (strcmp(dis_name_in_cache, "admin") == 0) {
+        if (display_name_exist != true) {
+            return ERROR_CREATE_CHANNEL_404;
+        }
+    } else {
+        if (strcmp(display_name, dis_name_in_cache) != 0) {
+            return ERROR_CREATE_CHANNEL_403;
+        }
+    }
 
+    bool is_channel_duplicate = check_duplicate_channel_name(channel_name);
+    if (is_channel_duplicate == true) {
+        return ERROR_CREATE_CHANNEL_409;
+    }
+
+    channel_info_t* channel = create_channel_or_null_malloc(channel_name, display_name, publicity);
+    if (channel == NULL) {
+        return ERROR_CREATE_CHANNEL_500;
+    }
+    result = insert_channel_info(channel);
+    if (result != 0) {
+        return ERROR_CREATE_CHANNEL_500;
+    }
+
+    memset(token_out, '\0', TOKEN_NAME_LENGTH);
+    strncpy(token_out, channel_name, TOKEN_NAME_LENGTH);
+
+    free(dis_name_in_cache);
+    free(channel);
     return 0;
+}
+
+char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH])
+{
+    int active_user_count = get_num_connected_users(active_users);
+    char* dis_name = NULL;
+    for (int i = 0; i < active_user_count; i++) {
+        if (strcmp(active_users[i].ip_address, ip_addr) == 0) {
+            dis_name = (char*) malloc(TOKEN_NAME_LENGTH);
+            memset(dis_name, '\0', TOKEN_NAME_LENGTH);
+            strncpy(dis_name, active_users[i].dsply_name, TOKEN_NAME_LENGTH);
+            return dis_name;
+        }
+    }
+    return dis_name;
 }
 
 int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
@@ -824,22 +869,26 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
         strcpy(body, "201\3\0");
         strcat(body, token);
     } else {
-        sprintf(body, "409\3%d\3", result);
-        if (result == ERROR_CREATE_USER_DUPLICATE_TOKEN) {
-            strcat(body, "Login Token was not unique");
-        } else if (result == ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME) {
-            strcat(body, "Display Name was not unique");
-        } else if (result == ERROR_CREATE_USER_DUPLICATE_ALL) {
-            strcat(body, "Login Token and Display name both were not unique");
+        sprintf(body, "%d\3", result);
+        if (result == ERROR_CREATE_CHANNEL_400) {
+            strcat(body, "Invalid request\3");
+        } else if (result == ERROR_CREATE_CHANNEL_404) {
+            strcat(body, "Display name NOT found\3");
+        } else if (result == ERROR_CREATE_CHANNEL_409) {
+            strcat(body, "Channel name is not unique\3");
+        } else if (result == ERROR_CREATE_CHANNEL_403) {
+            strcat(body, "Display name does not match\3");
         } else {
-            printw("the result of reading body is wrong\n");
+            printw("the result of read_and_create_channel is wrong\n");
             refresh();
             return -1;
         }
     }
 
-    uint32_t header_int = create_response_header(&header);
     uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -851,4 +900,28 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
     refresh();
     return 0;
+}
+
+channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity)
+{
+    channel_info_t* ret_channel = (channel_info_t*) malloc(sizeof(channel_info_t));
+    if (ret_channel == NULL) {
+        return NULL;
+    }
+    memset(ret_channel, 0, sizeof(channel_info_t));
+
+    char* channel_uuid = generate_random_uuid_malloc();
+    if (channel_uuid == NULL) {
+        return NULL;
+    }
+
+    strncpy(ret_channel->channel_id, channel_uuid, UUID_LEN);
+    strncpy(ret_channel->channel_name, channel_name, TOKEN_NAME_LENGTH);
+    strncpy(ret_channel->creator, display_name, TOKEN_NAME_LENGTH);
+    ret_channel->publicity = publicity;
+    strncpy(ret_channel->admin_list[0], display_name, TOKEN_NAME_LENGTH);
+    strncpy(ret_channel->user_list[0], display_name, TOKEN_NAME_LENGTH);
+
+    free(channel_uuid);
+    return ret_channel;
 }
