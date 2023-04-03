@@ -32,6 +32,7 @@
 void printAllUserAccounts(DBM *db);
 void printAllDisplayNames(DBM *db);
 void printAllLoginInfos(DBM *db);
+void printAllChannelInfos(DBM *db);
 void run_db_viewer(void);
 
 
