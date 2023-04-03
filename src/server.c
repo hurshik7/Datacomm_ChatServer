@@ -54,7 +54,8 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             break;
         case OBJECT_CHANNEL:
             if (header.version_type.type == TYPE_CREATE) {
-
+                result = read_and_create_channel(fd, token, header.body_size);
+                //send_create_channel_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -354,7 +355,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
                 goto error_exist_invalid_fields;
             }
 
-            if (strcmp((char*)&user_account->sock_addr, clnt_addr) != 0) {
+            if (strcmp(user_account->ip_addr, clnt_addr) != 0) {
                 // the connection ip addr does not match the one stored in db
                 goto error_exit_mismatch_address;
             }
@@ -427,7 +428,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     memset(user_account, 0, sizeof(user_account_t));
     strncpy(user_account->user_id, uuid, UUID_LEN);
     strncpy(user_account->display_name, display_name, TOKEN_NAME_LENGTH);
-    strncpy((char*)&user_account->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
+    strncpy(user_account->ip_addr, "0", CLNT_IP_ADDR_LENGTH);
     user_account->online_status = false;
     user_account->privilege_level = 0;
 
@@ -444,7 +445,7 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, cons
         perror("fetch user_account_t");
         return NULL;
     }
-    strncpy((char*)&user_acc->sock_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
+    strncpy(user_acc->ip_addr, clnt_addr, CLNT_IP_ADDR_LENGTH);
     user_acc->online_status = true;
     if (strcmp(user_acc->display_name, "admin") == 0) {
         // intialize privilege to 1 for admin account
@@ -459,7 +460,7 @@ user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc)
         perror("fetch user_account_t");
         return NULL;
     }
-    strncpy((char*)&user_acc->sock_addr, "0", CLNT_IP_ADDR_LENGTH);
+    strncpy(user_acc->ip_addr, "0", CLNT_IP_ADDR_LENGTH);
     user_acc->online_status = false;
     return user_acc;
 }
@@ -483,8 +484,9 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
         }
     }
 
-    uint32_t header_int = create_response_header(&header);
     uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -629,7 +631,7 @@ int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
     for (int i = 0; i < MAX_CLIENTS; i++) {
-        if (n <= MAX_CLIENTS && cache[i].dsply_name == NULL) {
+        if (n <= MAX_CLIENTS && cache[i].dsply_name[0] == '\0') {
             return n;
         } else if (cache[i].dsply_name[0] != '\0') {
             n++;
@@ -640,9 +642,14 @@ int get_num_connected_users(connected_user* cache)
 
 void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, int num_active_users)
 {
-    time_t current_time = time(NULL);
-    connected_user insert_user = {fd, connecting_user->display_name,
-                                  (char*)&connecting_user->sock_addr, current_time};
+    connected_user insert_user;
+    memset(&insert_user, 0, sizeof(connected_user));
+
+    strcpy(insert_user.dsply_name, connecting_user->display_name);
+    strcpy(insert_user.ip_address, connecting_user->ip_addr);
+    insert_user.fd = fd;
+    insert_user.access_time = time(NULL);
+
     cache[num_active_users] = insert_user;
     num_active_users++;
     // TODO remove testing print statement
@@ -703,17 +710,13 @@ int find_duplicate_user(connected_user* cache, int active_users)
 
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd)
 {
-    // extract the ip addr from the sockaddr_in structure in the user_account_t struct
-    char user_account_ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(user_account->sock_addr.sin_addr), user_account_ip, INET_ADDRSTRLEN);
-
     if (num_users == 0) {
         return false;
     }
 
     // iterate through the connected_users array and compare ip addr
     for (int i = 0; i < num_users; i++) {
-        if (strcmp(user_account_ip, conn_users[i].ip_address) == 0 &&
+        if (strcmp(user_account->ip_addr, conn_users[i].ip_address) == 0 &&
         strcmp(user_account->display_name, conn_users[i].dsply_name) == 0 && fd == conn_users[i].fd) {
             // Found a connected user with the same ip addr and dsply name
             return true;
@@ -727,10 +730,10 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
 uint32_t create_response_header(const chat_header_t* header)
 {
     uint32_t serialized_header;
-    uint32_t version = 0;
-    uint32_t type = 0;
-    uint32_t object = 0;
-    uint32_t body_size = 0;
+    uint32_t version;
+    uint32_t type;
+    uint32_t object;
+    uint32_t body_size;
 
     version = header->version_type.version;
     type = header->version_type.type;
@@ -752,7 +755,7 @@ void view_active_users(connected_user* cache)
     int i = 0;
     int num_active_users = get_num_connected_users(cache);
     //Print # of active users
-    if(cache[i].dsply_name == NULL) {
+    if (cache[i].dsply_name[0] == '\0') {
         printw("There are no active users.\n");
         refresh();
     } else
@@ -767,4 +770,85 @@ void view_active_users(connected_user* cache)
             refresh();
         }
     }
+}
+
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
+{
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
+        perror("[SERVER]Error: read body");
+        return -1;
+    }
+
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
+    char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char display_name[TOKEN_NAME_LENGTH] = { '\0', };
+    bool publicity = false;
+
+    char* token = strtok(buffer, "\3"); // channel_name
+    if (token == buffer) {
+        // TODO wrong request goto error response 400
+
+    }
+    strncpy(channel_name, token, strlen(token));
+
+    token = strtok(NULL, "\3"); // display-name
+    if (token == NULL) {
+        // TODO wrong request, goto error response 400
+    }
+    strncpy(display_name, token, strlen(token));
+
+    token = strtok(NULL, "\3"); // publicity
+    if (strcmp(token, "1") == 0) {
+        publicity = true;
+    } else if (token == NULL || strlen(token) != 1) {
+        // TODO wrong request goto error response 400
+
+    }
+
+    // TODO create channel
+
+
+    return 0;
+}
+
+int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
+{
+    char body[DEFAULT_BUFFER] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "201\3\0");
+        strcat(body, token);
+    } else {
+        sprintf(body, "409\3%d\3", result);
+        if (result == ERROR_CREATE_USER_DUPLICATE_TOKEN) {
+            strcat(body, "Login Token was not unique");
+        } else if (result == ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME) {
+            strcat(body, "Display Name was not unique");
+        } else if (result == ERROR_CREATE_USER_DUPLICATE_ALL) {
+            strcat(body, "Login Token and Display name both were not unique");
+        } else {
+            printw("the result of reading body is wrong\n");
+            refresh();
+            return -1;
+        }
+    }
+
+    uint32_t header_int = create_response_header(&header);
+    uint16_t body_size = strlen(body);
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_create_user_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_create_user_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
 }

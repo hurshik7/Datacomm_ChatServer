@@ -21,9 +21,9 @@
 #define OBJECT_MESSAGE (3)
 #define OBJECT_AUTH (4)
 
-#define ERROR_CREATE_USER_DUPLICATE_ALL (1)
-#define ERROR_CREATE_USER_DUPLICATE_TOKEN (2)
-#define ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME (3)
+#define ERROR_CREATE_USER_DUPLICATE_ALL (3)
+#define ERROR_CREATE_USER_DUPLICATE_TOKEN (1)
+#define ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME (2)
 
 #define ERROR_LOGIN_INVALID_CREDENTIALS (1)
 #define ERROR_LOGIN_DOES_NOT_EXIST (2)
@@ -52,8 +52,8 @@ typedef struct chat_header {
 
 typedef struct {
     int fd;
-    char* dsply_name;
-    char* ip_address;
+    char dsply_name[DSPLY_NAME_LENGTH];
+    char ip_address[CLNT_IP_ADDR_LENGTH];
     time_t access_time;
 } connected_user;
 
@@ -79,5 +79,8 @@ int find_duplicate_user(connected_user* users, int n);
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
+int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+
 
 #endif //CHAT_SERVER_SERVER_H
