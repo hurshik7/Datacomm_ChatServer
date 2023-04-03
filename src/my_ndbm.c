@@ -1,21 +1,33 @@
 #include "my_ndbm.h"
 #include <fcntl.h>
 #include <limits.h>
-#include <stdio.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+
+
+// replace print(), perror() with printw() + refresh()
+//#define printf(...) do { \
+//    printw(__VA_ARGS__); \
+//    refresh(); \
+//} while (0)
+#define perror(...) do { \
+    printw(__VA_ARGS__); \
+    refresh(); \
+} while (0)
 
 
 extern char DB_LOGIN_INFO_PATH[PATH_MAX];
 extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
+extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
 
 
 DBM* open_db_or_null(const char* db_name, int flag)
 {
     DBM* db = dbm_open(db_name, flag, 0644);
     if (!db) {
-//        perror("[DB]Error: Failed to open database");
+        perror("[DB]Error: Failed to open database");
         return NULL;
     }
     return db;
@@ -25,7 +37,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
 {
     DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO_PATH, O_RDONLY | O_SYNC);
     if (login_info_db == NULL) {
-//        perror("[DB]Error: Failed to open LOGIN_INFO DB");
+        perror("[DB]Error: Failed to open LOGIN_INFO DB");
         return NULL;
     }
 
@@ -123,7 +135,7 @@ bool check_duplicate_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
     if (display_names == NULL) {
-//        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return false;
     }
 
@@ -142,6 +154,58 @@ bool check_duplicate_display_name(char* display_name)
 
     dbm_close(display_names);
     return true;
+}
+
+bool check_duplicate_channel_name(char* channel_name)
+{
+    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
+    if (channel_infos == NULL) {
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        return false;
+    }
+
+    datum key, value;
+    // Iterate through all keys and values
+    for (key = dbm_firstkey(channel_infos); key.dptr != NULL; key = dbm_nextkey(channel_infos)) {
+        value = dbm_fetch(channel_infos, key);
+        if (value.dptr == NULL) {
+            perror("dbm_fetch");
+            dbm_close(channel_infos);
+            return false;
+        }
+        channel_info_t* k_channel = (channel_info_t*) value.dptr;
+        if (strcmp(k_channel->channel_name, channel_name) == 0) {
+            return true;
+        }
+    }
+
+    dbm_close(channel_infos);
+    return false;
+}
+
+char* get_uuid_with_display_name_or_null(char* display_name)
+{
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
+    if (display_names == NULL) {
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        return NULL;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = display_name;
+    key.dsize = strlen(display_name);
+
+    value = dbm_fetch(display_names, key);
+    if (value.dptr == NULL) {
+        dbm_close(display_names);
+        return NULL;
+    }
+
+    dbm_close(display_names);
+    return (char*) value.dptr;
 }
 
 int insert_user_account(user_account_t* user_account)
@@ -223,6 +287,62 @@ int insert_user_login(user_login_t* user_login)
 
     dbm_close(user_logins);
     return 0;
+}
+
+int insert_channel_info(channel_info_t* channel_info)
+{
+    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (channel_infos == NULL) {
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = channel_info->channel_id;
+    key.dsize = UUID_LEN;
+    value.dptr = channel_info;
+    value.dsize = sizeof(channel_info_t);
+
+    if (dbm_store(channel_infos, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert channel information\n");
+        dbm_close(channel_infos);
+        return -1;
+    }
+
+    dbm_close(channel_infos);
+    return 0;
+}
+
+channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
+{
+    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
+    if (channel_infos == NULL) {
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        return NULL;
+    }
+
+    datum key, value;
+    // Iterate through all keys and values
+    for (key = dbm_firstkey(channel_infos); key.dptr != NULL; key = dbm_nextkey(channel_infos)) {
+        value = dbm_fetch(channel_infos, key);
+        if (value.dptr == NULL) {
+            perror("dbm_fetch");
+            dbm_close(channel_infos);
+            return NULL;
+        }
+        channel_info_t* k_channel = (channel_info_t*) value.dptr;
+        if (strcmp(k_channel->channel_name, channel_name) == 0) {
+            channel_info_t* ret_channel_info = (channel_info_t*) malloc(sizeof(channel_info_t));
+            memcpy(ret_channel_info, k_channel, sizeof(channel_info_t));
+            return ret_channel_info;
+        }
+    }
+
+    dbm_close(channel_infos);
+    return NULL;
 }
 
 int insert_message(message_info_t * message)

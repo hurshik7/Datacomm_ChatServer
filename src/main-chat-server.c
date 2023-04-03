@@ -30,6 +30,7 @@ connected_user active_users[MAX_CLIENTS]; // active user cache w/ upper limit of
 char DB_LOGIN_INFO_PATH[PATH_MAX];
 char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 char DB_USER_ACCOUNT_PATH[PATH_MAX];
+char DB_CHANNEL_INFO_PATH[PATH_MAX];
 
 
 int main(int argc, char *argv[])
@@ -245,10 +246,12 @@ int setup_db_paths(void)
     memset(DB_USER_ACCOUNT_PATH, '\0', PATH_MAX);
     memset(DB_LOGIN_INFO_PATH, '\0', PATH_MAX);
     memset(DB_DISPLAY_NAMES_PATH, '\0', PATH_MAX);
+    memset(DB_CHANNEL_INFO_PATH, '\0', PATH_MAX);
 
     char temp_login_info_path[PATH_MAX] = { '\0', };
     char temp_display_names_path[PATH_MAX] = { '\0', };
     char temp_user_account_info_path[PATH_MAX] = { '\0', };
+    char temp_channel_info_path[PATH_MAX] = { '\0', };
 
     const char* home_dir = getenv("HOME");
     if (home_dir == NULL) {
@@ -258,25 +261,30 @@ int setup_db_paths(void)
     size_t home_dir_len = strlen(home_dir);
     if (home_dir_len + strlen((const char*) DB_DISPLAY_NAMES_PATH) + 1 >= PATH_MAX
         || home_dir_len + strlen((const char*) DB_LOGIN_INFO_PATH) + 1 >= PATH_MAX
-        || home_dir_len + strlen((const char*) DB_USER_ACCOUNT_PATH) + 1 >= PATH_MAX) {
+        || home_dir_len + strlen((const char*) DB_USER_ACCOUNT_PATH) + 1 >= PATH_MAX
+        || home_dir_len + strlen((const char*) DB_CHANNEL_INFO_PATH) + 1 >= PATH_MAX) {
         return EXIT_FAILURE;
     }
 
     strcpy(temp_login_info_path, home_dir);
     strcpy(temp_display_names_path, home_dir);
     strcpy(temp_user_account_info_path, home_dir);
+    strcpy(temp_channel_info_path, home_dir);
 
     strcat(temp_login_info_path, "/");
     strcat(temp_display_names_path, "/");
     strcat(temp_user_account_info_path, "/");
+    strcat(temp_channel_info_path, "/");
 
     strcat(temp_login_info_path, DB_LOGIN_INFO);
     strcat(temp_display_names_path, DB_DISPLAY_NAMES);
     strcat(temp_user_account_info_path, DB_USER_ACCOUNT);
+    strcat(temp_channel_info_path, DB_CHANNEL_INFO);
 
     strncpy(DB_LOGIN_INFO_PATH, temp_login_info_path, PATH_MAX);
     strncpy(DB_DISPLAY_NAMES_PATH, temp_display_names_path, PATH_MAX);
     strncpy(DB_USER_ACCOUNT_PATH, temp_user_account_info_path, PATH_MAX);
+    strncpy(DB_CHANNEL_INFO_PATH, temp_channel_info_path, PATH_MAX);
 
     return EXIT_SUCCESS;
 }

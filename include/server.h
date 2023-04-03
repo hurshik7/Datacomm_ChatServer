@@ -21,9 +21,9 @@
 #define OBJECT_MESSAGE (3)
 #define OBJECT_AUTH (4)
 
-#define ERROR_CREATE_USER_DUPLICATE_ALL (1)
-#define ERROR_CREATE_USER_DUPLICATE_TOKEN (2)
-#define ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME (3)
+#define ERROR_CREATE_USER_DUPLICATE_ALL (3)
+#define ERROR_CREATE_USER_DUPLICATE_TOKEN (1)
+#define ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME (2)
 
 #define ERROR_LOGIN_INVALID_CREDENTIALS (1)
 #define ERROR_LOGIN_DOES_NOT_EXIST (2)
@@ -40,6 +40,13 @@
 #define ERROR_USER_DOES_NOT_EXIST (4)
 #define SUCCESS_FORWARD_REQ (5)
 
+#define ERROR_CREATE_CHANNEL_400 (400)
+#define ERROR_CREATE_CHANNEL_403 (403)
+#define ERROR_CREATE_CHANNEL_404 (404)
+#define ERROR_CREATE_CHANNEL_409 (409)
+#define ERROR_CREATE_CHANNEL_500 (500)
+
+
 typedef struct version_type {
     uint8_t  version:4;
     uint8_t  type:4;
@@ -53,9 +60,8 @@ typedef struct chat_header {
 
 typedef struct {
     int fd;
-    char user_id[UUID_LEN];
-    char* dsply_name;
-    char* ip_address;
+    char dsply_name[DSPLY_NAME_LENGTH];
+    char ip_address[CLNT_IP_ADDR_LENGTH];
     time_t access_time;
 } connected_user;
 
@@ -84,5 +90,10 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
 connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH]);
+char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH]);
+int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
+
 
 #endif //CHAT_SERVER_SERVER_H
