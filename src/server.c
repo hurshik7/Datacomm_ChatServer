@@ -444,11 +444,16 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
     // TODO REQ BODY CHECK ALL FIELDS EXIST
     bool is_valid_fields;
 
-    if (display_name == NULL || channel_name || message_content || timestamp == NULL) {
-        goto error_invalid_request_fields;
-    } else {
+    if (display_name[0] != '\0' &&
+        channel_name[0] != '\0' &&
+        message_content[0] != '\0' &&
+        timestamp[0] != '\0' &&
+        token != NULL) {
         is_valid_fields = true;
+    } else {
+        goto error_invalid_request_fields;
     }
+
 
     // TODO CHANNEL EXISTENCE CHECK
     bool is_channel_exist;
@@ -465,7 +470,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
 
     connected_user* user_in_cache = get_connected_user_by_display_name(cache, display_name);
 
-    user_account_t* user = get_user_account_malloc_or_null(user_in_cache->user_id);
+    user_account_t* user = get_user_account_malloc_or_null(display_name);
 
     bool is_token_duplicate;
 
@@ -492,7 +497,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
     assert(is_token_duplicate == true && user != NULL);
 
     if (user != NULL) {
-        message_info_t* message = generate_message_malloc_or_null(display_name, cache, channel, message_content, timestamp);
+        message_info_t* message = generate_message_malloc_or_null(display_name, cache, channel, message_content, (uint8_t*)timestamp);
         insert_message(message);
     }
 
@@ -557,8 +562,8 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-message_info_t* generate_message_malloc_or_null(const char* display_name, connected_user* cache,
-                                                channel_info_t* channel, char* message_body, uint8_t timestamp)
+message_info_t* generate_message_malloc_or_null(char* display_name, connected_user* cache,
+                                                channel_info_t* channel, char* message_body, const uint8_t* timestamp)
 {
     message_info_t* message = (message_info_t*) malloc(sizeof(message_info_t));
     if (message == NULL) {
@@ -568,18 +573,21 @@ message_info_t* generate_message_malloc_or_null(const char* display_name, connec
 
     char* message_uuid = generate_random_uuid_malloc();
 
-    connected_user* sender = get_connected_user_by_display_name(cache, display_name);
 
     size_t message_body_length = strlen(message_body);
     message->message_content = (char *)malloc((message_body_length + 1) * sizeof(char));
 
+    user_login_t* userLogin = get_login_info_malloc_or_null(display_name);
+
     // TODO TIMESTAMP ISSUE
     memset(message, 0, sizeof(user_account_t));
     strncpy(message->message_id, message_uuid, UUID_LEN);
-    strncpy(message->user_id, sender->user_id, TOKEN_NAME_LENGTH);
+    strncpy(message->user_id, userLogin->uuid, TOKEN_NAME_LENGTH);
     strncpy(message->channel_id, channel->channel_id, UUID_LEN);
     strncpy(message->message_content, message_body, sizeof(message_body_length));
-    strncpy(message->time_stamp, timestamp, sizeof(timestamp));
+    for (size_t i = 0; i < TIMESTAMP_SIZE; ++i) {
+        (message->time_stamp)[i] = timestamp[i];
+    }
 
     return message;
 }
