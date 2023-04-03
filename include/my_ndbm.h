@@ -20,6 +20,7 @@
 #define DB_LOGIN_INFO "user_login_info"
 #define DB_DISPLAY_NAMES "display_names"
 #define DB_USER_ACCOUNT "user_account_info"
+#define DB_CHANNEL_INFO "channel_info"
 
 
 typedef struct UserLoginInfo {
@@ -58,9 +59,13 @@ DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
 user_account_t* get_user_account_malloc_or_null(char* user_uuid);
 bool check_duplicate_display_name(char* display_name);
+bool check_duplicate_channel_name(char* channel_name);
+char* get_uuid_with_display_name_or_null(char* display_name);
 int insert_user_account(user_account_t* user_account);
 int insert_display_name(char* display_name, char* uuid);
 int insert_user_login(user_login_t* user_login);
+int insert_channel_info(channel_info_t* channel_info);
+channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
 
 
 #endif /* MY_NDBM_H */
