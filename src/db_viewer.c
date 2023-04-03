@@ -1,5 +1,4 @@
 #include "db_viewer.h"
-#include "util.h"
 #include <limits.h>
 #include <ncurses.h>
 
@@ -17,10 +16,8 @@ void printAllUserAccounts(DBM *db)
         data = dbm_fetch(db, key);
         if (data.dptr != NULL) {
             struct UserAccountInfo* user = (struct UserAccountInfo *)data.dptr;
-            char* clnt_addr = malloc(20);
-            strncpy(clnt_addr, (const char*)&user->sock_addr, MAX_IP_ADD_STR_LENGTH);
             printw("%s, %s, %s, %d, %d\n", user->user_id, user->display_name,
-                   clnt_addr, user->online_status, user->privilege_level);
+                   user->ip_addr, user->online_status, user->privilege_level);
         }
         key = dbm_nextkey(db);
     }

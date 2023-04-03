@@ -31,7 +31,7 @@ typedef struct UserLoginInfo {
 typedef struct UserAccountInfo {
     char user_id[UUID_LEN];
     char display_name[TOKEN_NAME_LENGTH];
-    struct sockaddr_in sock_addr;
+    char ip_addr[CLNT_IP_ADDR_LENGTH];
     bool online_status;
     int privilege_level;
 } user_account_t;
