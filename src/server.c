@@ -878,6 +878,8 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
             strcat(body, "Channel name is not unique\3");
         } else if (result == ERROR_CREATE_CHANNEL_403) {
             strcat(body, "Display name does not match\3");
+        } else if (result == ERROR_CREATE_CHANNEL_500) {
+            strcat(body, "Internal server error\3");
         } else {
             printw("the result of read_and_create_channel is wrong\n");
             refresh();
