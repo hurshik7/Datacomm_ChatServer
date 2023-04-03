@@ -39,6 +39,13 @@
 #define ERROR_ADMIN_DOES_NOT_EXIST (3)
 #define ERROR_USER_DOES_NOT_EXIST (4)
 
+#define ERROR_CREATE_CHANNEL_400 (400)
+#define ERROR_CREATE_CHANNEL_403 (403)
+#define ERROR_CREATE_CHANNEL_404 (404)
+#define ERROR_CREATE_CHANNEL_409 (409)
+#define ERROR_CREATE_CHANNEL_500 (500)
+
+
 typedef struct version_type {
     uint8_t  version:4;
     uint8_t  type:4;
@@ -79,8 +86,10 @@ int find_duplicate_user(connected_user* users, int n);
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
-int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH]);
+char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH]);
 int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
 
 
 #endif //CHAT_SERVER_SERVER_H
