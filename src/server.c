@@ -480,9 +480,6 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
-    printw("%s\n", clnt_uuid);
-    refresh();
-
     bool is_token_duplicate;
 
     // TODO CHECK REQ SENDER'S PRIVILEGE FLAG
