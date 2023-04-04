@@ -272,7 +272,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
 
     // store uuid and remove extra char at end of uuid string
     char* clnt_uuid = malloc(UUID_LEN);
-    strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
+    strncpy(clnt_uuid, login_info->uuid, UUID_LEN);
     clnt_uuid[strlen(clnt_uuid)] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
@@ -351,7 +351,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     user_login_t* login_info = get_login_info_malloc_or_null(display_name);
 
     char* clnt_uuid = malloc(UUID_LEN);
-    strncpy(clnt_uuid, login_info->uuid, strlen(login_info->uuid));
+    strncpy(clnt_uuid, login_info->uuid, UUID_LEN);
     clnt_uuid[strlen(clnt_uuid)] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
