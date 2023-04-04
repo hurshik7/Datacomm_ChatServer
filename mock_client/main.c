@@ -259,7 +259,7 @@ int main(void) {
             sleep(5);
         }
     } else if (choice == '5') {
-        // CREAET CHANNEL
+        // CREATE CHANNEL
         chat_header_t test_header;
         memset(&test_header, 0, sizeof(chat_header_t));
         test_header.version_type.version = 1;
@@ -309,9 +309,11 @@ int main(void) {
         printf("object: %d\n", test_header.object);
 
         time_t send_time = time(NULL);
+        uint8_t send_this = send_time;
+        printf("%ld", send_time);
 
         char body[1024] = { '\0' };
-        sprintf(body, "benny\3comp4981 channel\3new message\3%ld", send_time);
+        sprintf(body, "benny\3comp4981 channel\3new message\3%hhu", send_this);
         test_header.body_size = (uint16_t) strlen(body);
         uint16_t body_size = test_header.body_size;
         test_header.body_size = htons(test_header.body_size);
