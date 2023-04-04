@@ -53,7 +53,7 @@ typedef struct MessageInfo {
     char message_id[UUID_LEN];
     char user_id[UUID_LEN];
     char channel_id[UUID_LEN];
-    char* message_content;
+    char message_content[MAX_MESSAGE_SIZE];
     uint8_t time_stamp[TIMESTAMP_SIZE];
 } message_info_t;
 
