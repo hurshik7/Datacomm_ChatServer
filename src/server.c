@@ -71,10 +71,10 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             break;
         case OBJECT_MESSAGE:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_message(fd, token, clnt_addr, cache);
+                result = read_and_create_message(fd, token, cache);
                 send_create_message_response(fd, header, result, token, clnt_addr);
-                channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
-                for (int i = 0; i <= get_num_connected_users(cache); i++) {
+//                channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
+//                for (int i = 0; i <= get_num_connected_users(cache); i++) {
                     // function that takes cache[i]->display_name as param that searches and
                     // returns true if current display_name in current_channel->user_list matches
                         // if true
@@ -82,7 +82,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
                             // char* this_ip_addr = cache[i]->in_channel_ip_addr
                             // send_create_message_response(user_in_channel_fd, header, SUCCESS_FORWARD_REQ, this_ip_addr)
                         // else continue;
-                }
+//                }
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -302,7 +302,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         printw("===Restarting your session.===");
         refresh();
     } else {
-        insert_user_in_cache(fd, cache, user_account, get_num_connected_users(cache));
+        insert_user_in_cache(fd, cache, user_account, login_info, get_num_connected_users(cache));
     }
 
     free(user_account);
@@ -325,7 +325,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     printw("\n%s\n", "reached terminate_and_restablish_connection");
     refresh();
     // store user in active user cache upon successful login
-    insert_user_in_cache(fd, cache, user_account, get_num_connected_users(cache));
+    insert_user_in_cache(fd, cache, user_account, login_info, get_num_connected_users(cache));
     return TERMINATE_AND_RESTABLISH_CONNECTION;
 }
 
@@ -416,7 +416,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     return ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE;
 }
 
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
@@ -426,22 +426,26 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
         return -1;
     }
 
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
     char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
     char message_content[MAX_MESSAGE_SIZE] = { '\0', };
     char timestamp[TIMESTAMP_SIZE] = { '\0', };
-    char* token = strtok(buffer, "\3"); // login_token
-    strncpy(display_name, token, strlen(token));
-    token = strtok(NULL, "\3"); // display-name
-    strncpy(channel_name, token, strlen(token));
-    token = strtok(NULL, "\3"); // channel-name
-    strncpy(message_content, token, strlen(token));
-    token = strtok(NULL, "\3"); // message-body
+    char* token = strtok(buffer, "\3");
+    strncpy(display_name, token, strlen(token)); // display-name
+    token = strtok(NULL, "\3");
+    strncpy(channel_name, token, strlen(token)); // channel-name
+    token = strtok(NULL, "\3");
+    strncpy(message_content, token, strlen(token)); // message-body
+    token = strtok(NULL, "\3");
     strncpy(timestamp, token, strlen(token)); // time stamp
 
     strncpy(token_out, channel_name, TOKEN_NAME_LENGTH);
 
-    // TODO REQ BODY CHECK ALL FIELDS EXIST
+    // check if all fields in dispatch are present
     bool is_valid_fields;
 
     if (display_name[0] != '\0' &&
@@ -454,8 +458,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
         goto error_invalid_request_fields;
     }
 
-
-    // TODO CHANNEL EXISTENCE CHECK
+    // check if the channel in dispatch exists
     bool is_channel_exist;
 
     channel_info_t* channel = get_channel_info_malloc_or_null(channel_name);
@@ -470,14 +473,22 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
 
     connected_user* user_in_cache = get_connected_user_by_display_name(cache, display_name);
 
-    user_account_t* user = get_user_account_malloc_or_null(display_name);
+    // store uuid and remove extra char at end of uuid string
+    char* clnt_uuid = malloc(UUID_LEN);
+    strncpy(clnt_uuid, user_in_cache->uuid, UUID_LEN);
+    clnt_uuid[strlen(clnt_uuid)] = '\0';
+
+    user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
+
+    printw("%s\n", clnt_uuid);
+    refresh();
 
     bool is_token_duplicate;
 
     // TODO CHECK REQ SENDER'S PRIVILEGE FLAG
-    switch (user->privilege_level) {
+    switch (user_account->privilege_level) {
         case 0:
-            if (user != NULL) {
+            if (user_account != NULL) {
                 // user exists in db
                 is_token_duplicate = true;
             } else {
@@ -485,7 +496,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
                 goto error_user_does_not_exist_user;
             }
         case 1:
-            if (user != NULL) {
+            if (user_account != NULL) {
                 // user exists in db
                 is_token_duplicate = true;
             } else {
@@ -494,36 +505,28 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const cha
             }
     }
 
-    assert(is_token_duplicate == true && user != NULL);
+    assert(is_token_duplicate == true && user_account != NULL);
 
-    if (user != NULL) {
-        message_info_t* message = generate_message_malloc_or_null(display_name, cache, channel, message_content, (uint8_t*)timestamp);
+    if (user_account != NULL) {
+        message_info_t* message = generate_message_malloc_or_null(user_in_cache->login_token, cache, channel, message_content, (uint8_t*)timestamp);
         insert_message(message);
     }
 
-    free(token);
     free(channel);
-    free(user_in_cache);
-    free(user);
+    free(user_account);
     return 0;
     error_invalid_request_fields:
-    free(token);
     return ERROR_INVALID_REQUEST;
     error_channel_not_exist:
-    free(token);
     free(channel);
     return ERROR_CHANNEL_DOES_NOT_EXIST;
     error_user_does_not_exist_admin:
-    free(token);
     free(channel);
-    free(user_in_cache);
-    free(user);
+    free(user_account);
     return ERROR_ADMIN_DOES_NOT_EXIST;
     error_user_does_not_exist_user:
-    free(token);
     free(channel);
-    free(user_in_cache);
-    free(user);
+    free(user_account);
     return ERROR_USER_DOES_NOT_EXIST;
 }
 
@@ -573,9 +576,7 @@ message_info_t* generate_message_malloc_or_null(char* display_name, connected_us
 
     char* message_uuid = generate_random_uuid_malloc();
 
-
     size_t message_body_length = strlen(message_body);
-    message->message_content = (char *)malloc((message_body_length + 1) * sizeof(char));
 
     user_login_t* userLogin = get_login_info_malloc_or_null(display_name);
 
@@ -796,13 +797,15 @@ int get_num_connected_users(connected_user* cache)
     return n;
 }
 
-void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, int num_active_users)
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, user_login_t* login_info, int num_active_users)
 {
     connected_user insert_user;
     memset(&insert_user, 0, sizeof(connected_user));
 
     strcpy(insert_user.dsply_name, connecting_user->display_name);
     strcpy(insert_user.ip_address, connecting_user->ip_addr);
+    strcpy(insert_user.uuid, connecting_user->user_id);
+    strcpy(insert_user.login_token, login_info->login_token);
     insert_user.fd = fd;
     insert_user.access_time = time(NULL);
 
@@ -934,8 +937,8 @@ void view_active_users(connected_user* cache)
         for (; i < num_active_users; i++)
         {
 
-            printw("display_name: %s, fd: %d,\n",
-                   cache[i].dsply_name, cache[i].fd);
+            printw("display_name: %s, fd: %d, uuid: %s\n",
+                   cache[i].dsply_name, cache[i].fd, cache[i].uuid);
             refresh();
         }
     }
