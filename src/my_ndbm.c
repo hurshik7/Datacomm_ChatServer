@@ -51,7 +51,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     value = dbm_fetch(login_info_db, key);
     if (value.dptr == NULL) {
         dbm_close(login_info_db);
-        perror("[DB]Error: User not found.");
+        perror("[DB]Error: User not found - login.");
         return NULL;
     }
 
@@ -83,7 +83,7 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid)
     value = dbm_fetch(user_acc_db, key);
     if (value.dptr == NULL) {
         dbm_close(user_acc_db);
-        perror("[DB]Error: User not found.");
+        perror("[DB]Error: User not found - user_account.");
         return NULL;
     }
 
@@ -97,6 +97,38 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid)
     memcpy(user_acc, value.dptr, sizeof(user_login_t));
     dbm_close(user_acc_db);
     return user_acc;
+}
+
+message_info_t* get_message_malloc_or_null(char* user_token)
+{
+    DBM* message_db = open_db_or_null(DB_MESSAGES, O_RDONLY | O_SYNC);
+    if (message_db == NULL) {
+        return NULL;
+    }
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = user_token;
+    key.dsize = strlen(user_token);
+
+    value = dbm_fetch(message_db, key);
+    if (value.dptr == NULL) {
+        dbm_close(message_db);
+        perror("[DB]Error: Message not found.");
+        return NULL;
+    }
+
+    message_info_t * message = (message_info_t *) malloc(sizeof(message_info_t));
+    if (message == NULL) {
+        dbm_close(message_db);
+        perror("[DB]Error: malloc()");
+        return NULL;
+    }
+
+    memcpy(message, value.dptr, sizeof(message_info_t));
+    dbm_close(message_db);
+    return message;
 }
 
 bool check_duplicate_display_name(char* display_name)
@@ -311,4 +343,31 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 
     dbm_close(channel_infos);
     return NULL;
+}
+
+int insert_message(message_info_t * message)
+{
+    DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (user_messages == NULL) {
+        perror("[DB]Error: Failed to open DB_MESSAGES DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = message->message_id;
+    key.dsize = strlen(message->message_id);
+    value.dptr = message;
+    value.dsize = sizeof(message_info_t );
+
+    if (dbm_store(user_messages, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert user login information\n");
+        dbm_close(user_messages);
+        return -1;
+    }
+
+    dbm_close(user_messages);
+    return 0;
 }

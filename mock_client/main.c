@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -37,8 +38,8 @@ int main(void) {
     }
 
     // prepare the sockaddr_in structure
-//    server.sin_addr.s_addr = inet_addr("192.168.1.85");
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
+//    server.sin_addr.s_addr = inet_addr("192.168.0.107");
     server.sin_family = AF_INET;
     server.sin_port = htons(5050);
 
@@ -55,7 +56,8 @@ int main(void) {
                  "[2] - CREATE_AUTH\n"
                  "[3] - DESTROY_AUTH\n"
                  "[4] - DESTROY_AUTH_ADMIN\n"
-                 "[5] - CREATE_CHANNEL\n");
+                 "[5] - CREATE_CHANNEL\n"
+                 "[6] - CREATE_MESSAGE\n");
     scanf("%c", &choice);
 
     if (choice == '0') {
@@ -257,7 +259,7 @@ int main(void) {
             sleep(5);
         }
     } else if (choice == '5') {
-        // CREAET CHANNEL
+        // CREATE CHANNEL
         chat_header_t test_header;
         memset(&test_header, 0, sizeof(chat_header_t));
         test_header.version_type.version = 1;
@@ -270,6 +272,48 @@ int main(void) {
 
         char body[1024] = { '\0' };
         sprintf(body, "comp4981 channel\3benny\3%d", 0);
+        test_header.body_size = (uint16_t) strlen(body);
+        uint16_t body_size = test_header.body_size;
+        test_header.body_size = htons(test_header.body_size);
+
+        uint32_t temp_int = 0;
+        memcpy(&temp_int, &test_header, sizeof(test_header));
+
+        if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            perror("send");
+        }
+
+        if (send(client_socket, body, body_size, 0) < 0) {
+            perror("send");
+        }
+
+        char buffer[DEFUALT_BUFFER];
+        if (read(client_socket, buffer, sizeof(uint32_t)) < 0) {
+            perror("read");
+        }
+        memset(buffer, '\0', DEFUALT_BUFFER);
+        if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+            perror("recv");
+        }
+        printf("res-body: %s\n", buffer);
+    } else if (choice == '6') {
+        // CREATE MESSAGE
+        chat_header_t test_header;
+        memset(&test_header, 0, sizeof(chat_header_t));
+        test_header.version_type.version = 1;
+        test_header.version_type.type = 1;
+        test_header.object = 3;
+        // for testing read_header
+        printf("version: %d\n", test_header.version_type.version);
+        printf("type: %d\n", test_header.version_type.type);
+        printf("object: %d\n", test_header.object);
+
+        time_t send_time = time(NULL);
+        uint8_t send_this = send_time;
+        printf("%ld", send_time);
+
+        char body[1024] = { '\0' };
+        sprintf(body, "benny\3comp4981 channel\3new message\3%hhu", send_this);
         test_header.body_size = (uint16_t) strlen(body);
         uint16_t body_size = test_header.body_size;
         test_header.body_size = htons(test_header.body_size);

@@ -14,13 +14,15 @@
 #define UUID_LEN (37)
 #define CLNT_IP_ADDR_LENGTH (16)
 #define DEFAULT_LIST_SIZE (64)
-#define TIMESTAMP_SIZE
+#define TIMESTAMP_SIZE (8)
+#define MAX_MESSAGE_SIZE (974)
 
 
 #define DB_LOGIN_INFO "user_login_info"
 #define DB_DISPLAY_NAMES "display_names"
 #define DB_USER_ACCOUNT "user_account_info"
 #define DB_CHANNEL_INFO "channel_info"
+#define DB_MESSAGES "messages_info"
 
 
 typedef struct UserLoginInfo {
@@ -50,14 +52,15 @@ typedef struct ChannelInfo {
 typedef struct MessageInfo {
     char message_id[UUID_LEN];
     char user_id[UUID_LEN];
-    char channel_id[TOKEN_NAME_LENGTH];
-    char* message_content;
+    char channel_id[UUID_LEN];
+    char message_content[MAX_MESSAGE_SIZE];
     uint8_t time_stamp[TIMESTAMP_SIZE];
 } message_info_t;
 
 DBM* open_db_or_null(const char* db_name, int flag);
 user_login_t* get_login_info_malloc_or_null(char *login_token);
 user_account_t* get_user_account_malloc_or_null(char* user_uuid);
+message_info_t* get_message_malloc_or_null(char* user_token);
 bool check_duplicate_display_name(char* display_name);
 bool check_duplicate_channel_name(char* channel_name);
 char* get_uuid_with_display_name_or_null(char* display_name);
@@ -66,6 +69,7 @@ int insert_display_name(char* display_name, char* uuid);
 int insert_user_login(user_login_t* user_login);
 int insert_channel_info(channel_info_t* channel_info);
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
+int insert_message(message_info_t * message);
 
 
 #endif /* MY_NDBM_H */
