@@ -62,6 +62,8 @@ typedef struct {
     int fd;
     char dsply_name[DSPLY_NAME_LENGTH];
     char ip_address[CLNT_IP_ADDR_LENGTH];
+    char login_token[TOKEN_NAME_LENGTH];
+    char uuid[UUID_LEN];
     time_t access_time;
 } connected_user;
 
@@ -70,7 +72,7 @@ int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache);
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
 message_info_t* generate_message_malloc_or_null(char* display_name, connected_user* cache,
@@ -82,7 +84,7 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 int get_num_connected_users(connected_user* cache);
-void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, int num_active_users);
+void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, user_login_t* login_info, int num_active_users);
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int num_active_users);
 int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
