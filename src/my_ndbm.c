@@ -51,7 +51,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     value = dbm_fetch(login_info_db, key);
     if (value.dptr == NULL) {
         dbm_close(login_info_db);
-        perror("[DB]Error: User not found.");
+        perror("[DB]Error: User not found - login.");
         return NULL;
     }
 
@@ -83,7 +83,7 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid)
     value = dbm_fetch(user_acc_db, key);
     if (value.dptr == NULL) {
         dbm_close(user_acc_db);
-        perror("[DB]Error: User not found.");
+        perror("[DB]Error: User not found - user_account.");
         return NULL;
     }
 
