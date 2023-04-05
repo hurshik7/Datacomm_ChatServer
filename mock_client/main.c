@@ -340,7 +340,7 @@ int main(void) {
             printf("object: %d\n", test_header.object);
 
             char body[1024] = {'\0'};
-            sprintf(body, "bennychao\3benny\3monkey123");
+            sprintf(body, "benny\3bennybennychao\3monkey123");
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
             test_header.body_size = htons(test_header.body_size);
