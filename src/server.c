@@ -228,7 +228,8 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bod
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
-int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
+int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size,
+                          char* clnt_ip_addr, connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
@@ -242,26 +243,49 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     printw("[Body]nread: %d, body: %s\n", nread, buffer);
     refresh();
 
-    char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char display_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char login_token[TOKEN_NAME_LENGTH] = { '\0', };
     char password[PSWD_MAX_LENGTH] = { '\0', };
 
-    char* token = strtok(buffer, "\3"); // login_token
-    strncpy(login_token, token, strlen(token));
-    token = strtok(NULL, "\3"); // display-name
+    char* token = strtok(buffer, "\3"); // display_name
     strncpy(display_name, token, strlen(token));
+    token = strtok(NULL, "\3"); // login_token
+    strncpy(login_token, token, strlen(token));
+    token = strtok(NULL, "\3"); // password
+    strncpy(password, token, strlen(token));
+
+    // check if all fields in dispatch are present
+
+    bool is_valid_fields = false;
+
+    if (display_name[0] != '\0' &&
+        login_token[0] != '\0' &&
+        password[0] != '\0' &&
+        token != NULL) {
+        is_valid_fields = true;
+    } else {
+        goto error_invalid_request_fields;
+    }
+
+    assert(is_valid_fields == true);
 
     bool is_token_duplicate = false;
     user_login_t* login_info = get_login_info_malloc_or_null(login_token);
-    bool is_display_name_duplicates = check_duplicate_display_name(display_name);
+
     if (login_info != NULL) {
         // the user already exist
         is_token_duplicate = true;
     }
 
-    if (is_token_duplicate == true && is_display_name_duplicates == true) {
-        goto error_exit_duplicate_token_and_name;
+    if (is_token_duplicate == false) {
+        goto error_user_not_exist;
     }
+
+    assert(is_valid_fields == true);
+
+    // check privilege level
+    // if admin privilege check if user exists
+    // if user privilege check if req sender name and pw matches req-body display_name and password
     if (is_token_duplicate == true) {
         goto error_exit_duplicate_login_token;
     }
@@ -270,9 +294,6 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     }
     assert(is_token_duplicate == false && is_display_name_duplicates == false);
     assert(login_info == NULL);
-
-    token = strtok(NULL, "\3"); // password
-    strncpy(password, token, strlen(token));
 
     //  store the user in the db (login_info db, user_account db, and also display_name db)
     char* user_uuid_malloc = generate_random_uuid_malloc();
@@ -294,12 +315,12 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     free(user_uuid_malloc);
     free(login_info);
     return 0;
-    error_exit_duplicate_token_and_name:
+    error_invalid_request_fields:
     free(login_info);
-    return ERROR_CREATE_USER_DUPLICATE_ALL;
-    error_exit_duplicate_login_token:
+    return ERROR_DESTROY_USER_INVALID_FIELDS;
+    error_user_not_exist:
     free(login_info);
-    return ERROR_CREATE_USER_DUPLICATE_TOKEN;
+    return ERROR_DESTROY_USER_NOT_EXIST;
     error_exit_duplicate_display_name:
     free(login_info);
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
@@ -836,7 +857,7 @@ int send_destroy_user_response(int fd, chat_header_t header, int result, const c
             strcpy(body, "400\3\0");
             strcat(body, "Invalid request fields");
             strcat(body, token);
-        } else if (result == ERROR_DESTROY_USER_USER_NOT_EXIST) {
+        } else if (result == ERROR_DESTROY_USER_NOT_EXIST) {
             strcpy(body, "404\3\0");
             strcat(body, "User does not exist");
             strcat(body, token);
@@ -1123,12 +1144,12 @@ int find_duplicate_user(connected_user* cache, int active_users_count)
     return found_duplicate ? min_fd : -1;
 }
 
-connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name)
+connected_user* get_connected_user_by_fd(connected_user* cache, int fd)
 {
     int num_connected_users = get_num_connected_users(cache);
 
     for (int i = 0; i < num_connected_users; i++) {
-        if (strcmp(cache[i].dsply_name, display_name) == 0) {
+        if (cache[i].fd == fd) {
             return &cache[i];
         }
     }
