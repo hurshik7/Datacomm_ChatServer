@@ -228,6 +228,83 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bod
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
+int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
+{
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
+        perror("[SERVER]Error: read body");
+        return -1;
+    }
+
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
+    char login_token[TOKEN_NAME_LENGTH] = { '\0', };
+    char display_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char password[PSWD_MAX_LENGTH] = { '\0', };
+
+    char* token = strtok(buffer, "\3"); // login_token
+    strncpy(login_token, token, strlen(token));
+    token = strtok(NULL, "\3"); // display-name
+    strncpy(display_name, token, strlen(token));
+
+    bool is_token_duplicate = false;
+    user_login_t* login_info = get_login_info_malloc_or_null(login_token);
+    bool is_display_name_duplicates = check_duplicate_display_name(display_name);
+    if (login_info != NULL) {
+        // the user already exist
+        is_token_duplicate = true;
+    }
+
+    if (is_token_duplicate == true && is_display_name_duplicates == true) {
+        goto error_exit_duplicate_token_and_name;
+    }
+    if (is_token_duplicate == true) {
+        goto error_exit_duplicate_login_token;
+    }
+    if (is_display_name_duplicates == true) {
+        goto error_exit_duplicate_display_name;
+    }
+    assert(is_token_duplicate == false && is_display_name_duplicates == false);
+    assert(login_info == NULL);
+
+    token = strtok(NULL, "\3"); // password
+    strncpy(password, token, strlen(token));
+
+    //  store the user in the db (login_info db, user_account db, and also display_name db)
+    char* user_uuid_malloc = generate_random_uuid_malloc();
+    if (user_uuid_malloc != NULL) {
+        insert_display_name(display_name, user_uuid_malloc);
+    }
+    user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
+    if (user_login != NULL) {
+        insert_user_login(user_login);
+    }
+    user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name);
+    if (user_account != NULL) {
+        insert_user_account(user_account);
+    }
+    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
+
+    free(user_account);
+    free(user_login);
+    free(user_uuid_malloc);
+    free(login_info);
+    return 0;
+    error_exit_duplicate_token_and_name:
+    free(login_info);
+    return ERROR_CREATE_USER_DUPLICATE_ALL;
+    error_exit_duplicate_login_token:
+    free(login_info);
+    return ERROR_CREATE_USER_DUPLICATE_TOKEN;
+    error_exit_duplicate_display_name:
+    free(login_info);
+    return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
+}
+
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
@@ -741,6 +818,46 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
     }
     if (write(fd, body, body_size) < 0) {
         perror("send body (send_create_user_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
+}
+
+int send_destroy_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
+{
+    char body[DEFAULT_BUFFER] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "204\3\0");
+        strcat(body, token);
+    } else {
+        if (result == ERROR_DESTROY_USER_INVALID_FIELDS) {
+            strcpy(body, "400\3\0");
+            strcat(body, "Invalid request fields");
+            strcat(body, token);
+        } else if (result == ERROR_DESTROY_USER_USER_NOT_EXIST) {
+            strcpy(body, "404\3\0");
+            strcat(body, "User does not exist");
+            strcat(body, token);
+        } else if (result == ERROR_DESTROY_USER_INVALID_CREDENTIALS) {
+            strcpy(body, "403\3\0");
+            strcat(body, "Invalid credentials");
+            strcat(body, token);
+        } else {
+            assert(!"should not be here");
+        }
+    }
+
+    uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_create_user_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_destroy_user_response)");
         return -1;
     }
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
