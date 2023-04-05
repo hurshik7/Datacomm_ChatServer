@@ -68,6 +68,9 @@ int insert_user_account(user_account_t* user_account);
 int insert_display_name(char* display_name, char* uuid);
 int insert_user_login(user_login_t* user_login);
 int insert_channel_info(channel_info_t* channel_info);
+int remove_user_account(char* user_id);
+int remove_display_name(char* display_name);
+int remove_user_login(char* login_token);
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
 int insert_message(message_info_t * message);
 
