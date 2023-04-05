@@ -671,8 +671,9 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
         }
     }
 
-    uint32_t header_int = create_response_header(&header);
     uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -718,8 +719,9 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
         }
     }
 
-    uint32_t header_int = create_response_header(&header);
     uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
         perror("send header (send_create_user_response)");
         return -1;
@@ -766,8 +768,9 @@ int send_create_message_response(int fd, chat_header_t header, int result, const
         }
     }
 
-    uint32_t header_int = create_response_header(&header);
     uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
         perror("send header (send_create_message_response)");
         return -1;
