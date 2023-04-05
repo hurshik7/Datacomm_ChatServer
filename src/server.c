@@ -50,6 +50,10 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             } else if (header.version_type.type == TYPE_DESTROY) {
                 result = read_and_destroy_user(fd, token, header.body_size, cache);
                 send_destroy_user_response(fd, header, result, token, clnt_addr);
+                connected_user* req_sender = get_connected_user_by_fd(cache, fd);
+                if (req_sender->privilege_level == 0) {
+                    close(fd);
+                }
             } else {
                 perror("[SERVER]Error: wrong type");
                 assert(!"should not be here");
@@ -269,16 +273,22 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     assert(is_valid_fields == true);
 
     bool is_token_duplicate = false;
-    user_login_t* login_info = get_login_info_malloc_or_null(login_token);
+
+    connected_user* req_sender = get_connected_user_by_fd(cache, fd);
+    user_login_t* req_sender_login_info = get_login_info_malloc_or_null(req_sender->login_token);
+    user_account_t* req_sender_account_info = get_user_account_malloc_or_null(req_sender->uuid);
+
+    // store uuid and remove extra char at end of uuid string
+    char* req_body_login_token = malloc(TOKEN_NAME_LENGTH);
+    strncpy(req_body_login_token, login_token, TOKEN_NAME_LENGTH);
+    req_body_login_token[strlen(login_token)] = '\0';
+
+    user_login_t* login_info = get_login_info_malloc_or_null(req_body_login_token);
 
     if (login_info != NULL) {
         // the user already exist
         is_token_duplicate = true;
     }
-
-    connected_user* req_sender = get_connected_user_by_fd(cache, fd);
-    user_login_t* req_sender_login_info = get_login_info_malloc_or_null(req_sender->login_token);
-    user_account_t* req_sender_account_info = get_user_account_malloc_or_null(req_sender->uuid);
 
     // if user does not exist check privilege level
     if (is_token_duplicate == false) {
@@ -300,23 +310,23 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
 
     strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
 
-    free(login_info);
-    free(req_sender);
-    free(req_sender_login_info);
-    free(req_sender_account_info);
+//    free(login_info);
+//    free(req_sender);
+//    free(req_sender_login_info);
+//    free(req_sender_account_info);
     return 0;
     error_invalid_request_fields:
     return ERROR_DESTROY_USER_INVALID_FIELDS;
     error_user_not_exist:
-    free(login_info);
-    free(req_sender);
-    free(req_sender_login_info);
-    free(req_sender_account_info);
+//    free(login_info);
+//    free(req_sender);
+//    free(req_sender_login_info);
+//    free(req_sender_account_info);
     return ERROR_DESTROY_USER_NOT_EXIST;
     error_invalid_credentials:
-    free(req_sender);
-    free(req_sender_login_info);
-    free(req_sender_account_info);
+//    free(req_sender);
+//    free(req_sender_login_info);
+//    free(req_sender_account_info);
     return ERROR_DESTROY_USER_INVALID_CREDENTIALS;
 }
 
@@ -1222,8 +1232,8 @@ void view_active_users(connected_user* cache)
         for (; i < num_active_users; i++)
         {
 
-            printw("display_name: %s, fd: %d, uuid: %s\n",
-                   cache[i].dsply_name, cache[i].fd, cache[i].uuid);
+            printw("display_name: %s, fd: %d, uuid: %s, privilege lvl: %d\n",
+                   cache[i].dsply_name, cache[i].fd, cache[i].uuid, cache[i].privilege_level);
             refresh();
         }
     }
