@@ -48,7 +48,8 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
-                // TODO WORK ON THIS NOW
+                result = read_and_destroy_user(fd, token, header.body_size, cache);
+                send_destroy_user_response(fd, header, result, token, clnt_addr);
             } else {
                 perror("[SERVER]Error: wrong type");
                 assert(!"should not be here");
@@ -293,6 +294,9 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
 
     assert(is_token_duplicate == true);
 
+    remove_display_name(req_sender->dsply_name);
+    remove_user_account(req_sender->uuid);
+    remove_user_login(req_sender->login_token);
 
     strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
 
@@ -1073,6 +1077,7 @@ void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connect
     strcpy(insert_user.ip_address, connecting_user->ip_addr);
     strcpy(insert_user.uuid, connecting_user->user_id);
     strcpy(insert_user.login_token, login_info->login_token);
+    insert_user.privilege_level = connecting_user->privilege_level;
     insert_user.fd = fd;
     insert_user.access_time = time(NULL);
 

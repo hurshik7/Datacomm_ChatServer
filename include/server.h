@@ -68,6 +68,7 @@ typedef struct {
     char ip_address[CLNT_IP_ADDR_LENGTH];
     char login_token[TOKEN_NAME_LENGTH];
     char uuid[UUID_LEN];
+    int privilege_level;
     time_t access_time;
 } connected_user;
 
