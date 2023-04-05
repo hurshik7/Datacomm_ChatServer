@@ -146,7 +146,7 @@ int main(void) {
             printf("type: %d\n", test_header.version_type.type);
             printf("object: %d\n", test_header.object);
 
-            char body[] = "bennychao\3monkey123\0";
+            char body[] = "GlobalAdmin\3admin\0";
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
             test_header.body_size = htons(test_header.body_size);
@@ -171,6 +171,7 @@ int main(void) {
                     perror("recv");
                 }
                 printf("res: %s\n", buffer);
+                sleep(5);
         } else if (choice == '3') {
             // DESTROY_AUTH
             chat_header_t test_header;

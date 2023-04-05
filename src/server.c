@@ -298,15 +298,16 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     }
 
     // check if sender display name and password match req-body display name and password
-    if (strcmp(req_sender->dsply_name, display_name) != 0 && strcmp(req_sender_login_info->password, password) != 0) {
+    if (strcmp(req_sender->dsply_name, display_name) != 0 && strcmp(req_sender_login_info->password, password) != 0 &&
+    req_sender_account_info->privilege_level == 0) {
         goto error_invalid_credentials;
     }
 
     assert(is_token_duplicate == true);
 
-    remove_display_name(req_sender->dsply_name);
-    remove_user_account(req_sender->uuid);
-    remove_user_login(req_sender->login_token);
+    remove_display_name(display_name);
+    remove_user_account(login_info->uuid);
+    remove_user_login(login_info->login_token);
 
     strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
 
