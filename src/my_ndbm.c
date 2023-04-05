@@ -316,6 +316,78 @@ int insert_channel_info(channel_info_t* channel_info)
     return 0;
 }
 
+int remove_user_account(char* user_id)
+{
+    DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (user_accounts == NULL) {
+        perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
+        return -1;
+    }
+
+    datum key;
+    memset(&key, 0, sizeof(datum));
+
+    key.dptr = user_id;
+    key.dsize = UUID_LEN;
+
+    if (dbm_delete(user_accounts, key) != 0) {
+        perror("[DB]Error: Failed to remove user account\n");
+        dbm_close(user_accounts);
+        return -1;
+    }
+
+    dbm_close(user_accounts);
+    return 0;
+}
+
+int remove_display_name(char* display_name)
+{
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (display_names == NULL) {
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        return -1;
+    }
+
+    datum key;
+    memset(&key, 0, sizeof(datum));
+
+    key.dptr = display_name;
+    key.dsize = strlen(display_name);
+
+    if (dbm_delete(display_names, key) != 0) {
+        perror("[DB]Error: Failed to remove display_name\n");
+        dbm_close(display_names);
+        return -1;
+    }
+
+    dbm_close(display_names);
+    return 0;
+}
+
+int remove_user_login(char* login_token)
+{
+    DBM* user_logins = open_db_or_null(DB_LOGIN_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (user_logins == NULL) {
+        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        return -1;
+    }
+
+    datum key;
+    memset(&key, 0, sizeof(datum));
+
+    key.dptr = login_token;
+    key.dsize = strlen(login_token);
+
+    if (dbm_delete(user_logins, key) != 0) {
+        perror("[DB]Error: Failed to remove user login information\n");
+        dbm_close(user_logins);
+        return -1;
+    }
+
+    dbm_close(user_logins);
+    return 0;
+}
+
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
