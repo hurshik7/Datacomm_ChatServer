@@ -70,8 +70,10 @@ typedef struct {
 int handle_request(int fd, const char* clnt_addr, connected_user* cache);
 int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
+int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH]);
 int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache);
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id);
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
@@ -79,9 +81,12 @@ message_info_t* generate_message_malloc_or_null(char* display_name, channel_info
                                                 char* message_body, const uint8_t* timestamp);
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr);
 user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc);
+channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+int send_destroy_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
+int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 int get_num_connected_users(connected_user* cache);
 void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, user_login_t* login_info, int num_active_users);
@@ -92,10 +97,7 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
 connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);
-int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH]);
 char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH]);
-int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
-channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
 
 
 #endif //CHAT_SERVER_SERVER_H
