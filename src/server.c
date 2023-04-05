@@ -293,7 +293,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         login_user_account_malloc_or_null(user_account, clnt_addr);
         insert_user_account(user_account);
     }
-    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
+    strncpy(token_out, user_account->display_name, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
     if (find_connected_user_with_same_cred(user_account, cache,
@@ -505,7 +505,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
     assert(is_token_duplicate == true && user_account != NULL);
 
     if (user_account != NULL) {
-        message_info_t* message = generate_message_malloc_or_null(user_in_cache->login_token, cache, channel, message_content, (uint8_t*)timestamp);
+        message_info_t* message = generate_message_malloc_or_null(user_in_cache->login_token, channel, message_content, (uint8_t*)timestamp);
         insert_message(message);
     }
 
@@ -562,8 +562,8 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
-message_info_t* generate_message_malloc_or_null(char* display_name, connected_user* cache,
-                                                channel_info_t* channel, char* message_body, const uint8_t* timestamp)
+message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
+                                                char* message_body, const uint8_t* timestamp)
 {
     message_info_t* message = (message_info_t*) malloc(sizeof(message_info_t));
     if (message == NULL) {
