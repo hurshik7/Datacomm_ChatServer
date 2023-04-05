@@ -293,7 +293,7 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         login_user_account_malloc_or_null(user_account, clnt_addr);
         insert_user_account(user_account);
     }
-    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
+    strncpy(token_out, user_account->display_name, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
     if (find_connected_user_with_same_cred(user_account, cache,
