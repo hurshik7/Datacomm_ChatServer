@@ -74,8 +74,7 @@ typedef struct {
 int handle_request(int fd, const char* clnt_addr, connected_user* cache);
 int read_header(int fd, chat_header_t *header_out);
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size);
-int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, char* clnt_addr,
-                          connected_user* cache);
+int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, connected_user* cache);
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH]);
@@ -99,6 +98,7 @@ void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user
 int cmp_users(const void* a, const void* b);
 int find_duplicate_user(connected_user* users, int n);
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd);
+connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name);
 connected_user* get_connected_user_by_fd(connected_user* cache, int fd);
 uint32_t create_response_header(const chat_header_t* header);
 void view_active_users(connected_user* cache);

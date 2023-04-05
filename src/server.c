@@ -228,8 +228,7 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bod
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
-int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size,
-                          char* clnt_ip_addr, connected_user* cache)
+int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
@@ -255,7 +254,6 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     strncpy(password, token, strlen(token));
 
     // check if all fields in dispatch are present
-
     bool is_valid_fields = false;
 
     if (display_name[0] != '\0' &&
@@ -277,53 +275,45 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
         is_token_duplicate = true;
     }
 
+    connected_user* req_sender = get_connected_user_by_fd(cache, fd);
+    user_login_t* req_sender_login_info = get_login_info_malloc_or_null(req_sender->login_token);
+    user_account_t* req_sender_account_info = get_user_account_malloc_or_null(req_sender->uuid);
+
+    // if user does not exist check privilege level
     if (is_token_duplicate == false) {
-        goto error_user_not_exist;
+        if (req_sender_account_info->privilege_level == 1) {
+            goto error_user_not_exist;
+        }
     }
 
-    assert(is_valid_fields == true);
+    // check if sender display name and password match req-body display name and password
+    if (strcmp(req_sender->dsply_name, display_name) != 0 && strcmp(req_sender_login_info->password, password) != 0) {
+        goto error_invalid_credentials;
+    }
 
-    // check privilege level
-    // if admin privilege check if user exists
-    // if user privilege check if req sender name and pw matches req-body display_name and password
-    if (is_token_duplicate == true) {
-        goto error_exit_duplicate_login_token;
-    }
-    if (is_display_name_duplicates == true) {
-        goto error_exit_duplicate_display_name;
-    }
-    assert(is_token_duplicate == false && is_display_name_duplicates == false);
-    assert(login_info == NULL);
+    assert(is_token_duplicate == true);
 
-    //  store the user in the db (login_info db, user_account db, and also display_name db)
-    char* user_uuid_malloc = generate_random_uuid_malloc();
-    if (user_uuid_malloc != NULL) {
-        insert_display_name(display_name, user_uuid_malloc);
-    }
-    user_login_t* user_login = generate_user_login_malloc_or_null(login_token, password, user_uuid_malloc);
-    if (user_login != NULL) {
-        insert_user_login(user_login);
-    }
-    user_account_t* user_account = generate_user_account_malloc_or_null(user_uuid_malloc, display_name);
-    if (user_account != NULL) {
-        insert_user_account(user_account);
-    }
-    strncpy(token_out, login_token, TOKEN_NAME_LENGTH);
 
-    free(user_account);
-    free(user_login);
-    free(user_uuid_malloc);
+    strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
+
     free(login_info);
+    free(req_sender);
+    free(req_sender_login_info);
+    free(req_sender_account_info);
     return 0;
     error_invalid_request_fields:
-    free(login_info);
     return ERROR_DESTROY_USER_INVALID_FIELDS;
     error_user_not_exist:
     free(login_info);
+    free(req_sender);
+    free(req_sender_login_info);
+    free(req_sender_account_info);
     return ERROR_DESTROY_USER_NOT_EXIST;
-    error_exit_duplicate_display_name:
-    free(login_info);
-    return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
+    error_invalid_credentials:
+    free(req_sender);
+    free(req_sender_login_info);
+    free(req_sender_account_info);
+    return ERROR_DESTROY_USER_INVALID_CREDENTIALS;
 }
 
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
@@ -1142,6 +1132,19 @@ int find_duplicate_user(connected_user* cache, int active_users_count)
         }
     }
     return found_duplicate ? min_fd : -1;
+}
+
+connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name)
+{
+    int num_connected_users = get_num_connected_users(cache);
+
+    for (int i = 0; i < num_connected_users; i++) {
+        if (strcmp(cache[i].dsply_name, display_name) == 0) {
+            return &cache[i];
+        }
+    }
+
+    return NULL;
 }
 
 connected_user* get_connected_user_by_fd(connected_user* cache, int fd)
