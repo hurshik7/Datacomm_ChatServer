@@ -87,6 +87,7 @@ void run_db_viewer(void)
     DBM* user_accounts = dbm_open(DB_USER_ACCOUNT_PATH, O_RDWR | O_SYNC | O_APPEND, 0644);
     if (user_accounts != NULL) {
         printAllUserAccounts(user_accounts);
+        dbm_close(user_accounts);
     }
     printw("\n");
 
@@ -94,6 +95,7 @@ void run_db_viewer(void)
     DBM* display_names = dbm_open(DB_DISPLAY_NAMES_PATH, O_RDWR | O_SYNC | O_APPEND, 0644);
     if (display_names != NULL) {
         printAllDisplayNames(display_names);
+        dbm_close(display_names);
     }
     printw("\n");
 
@@ -101,6 +103,7 @@ void run_db_viewer(void)
     DBM* login_infos = dbm_open(DB_LOGIN_INFO_PATH, O_RDWR | O_SYNC | O_APPEND, 0644);
     if (login_infos != NULL) {
         printAllLoginInfos(login_infos);
+        dbm_close(login_infos);
     }
     printw("\n");
 
@@ -108,12 +111,8 @@ void run_db_viewer(void)
     DBM* channel_infos = dbm_open(DB_CHANNEL_INFO_PATH, O_RDWR | O_SYNC | O_APPEND, 0644);
     if (channel_infos != NULL) {
         printAllChannelInfos(channel_infos);
+        dbm_close(channel_infos);
     }
     printw("\n");
     refresh();
-
-    // deallocate memory
-    dbm_close(login_infos);
-    dbm_close(display_names);
-    dbm_close(user_accounts);
 }
