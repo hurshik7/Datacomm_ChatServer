@@ -102,7 +102,7 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
 int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
 int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size);
-
+int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr);
 
 /* related to MESSAGE */
 int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache);

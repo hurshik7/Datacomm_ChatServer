@@ -67,7 +67,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             } else if (header.version_type.type == TYPE_READ) {
                 char channel_info_out[TEMP_CHANNEL_INFO_LENGTH] = { '\0', };
                 result = read_and_read_channel(fd, channel_info_out, header.body_size);
-                send_read_channel_response(fd, header, result, channel_info_out);
+                send_read_channel_response(fd, header, result, channel_info_out, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -1115,11 +1115,11 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
     uint32_t header_int = create_response_header(&header);
 
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
-        perror("send header (send_create_user_response)");
+        perror("send header (send_create_channel_response)");
         return -1;
     }
     if (write(fd, body, body_size) < 0) {
-        perror("send body (send_create_user_response)");
+        perror("send body (send_create_channel_response)");
         return -1;
     }
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
@@ -1167,6 +1167,44 @@ int send_create_message_response(int fd, chat_header_t header, int result, const
     }
     if (write(fd, body, body_size) < 0) {
         perror("send body (send_create_message_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
+}
+
+int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr)
+{
+    char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "200\3\0");
+        strcat(body, channel_info_token);
+    } else {
+        sprintf(body, "%d\3", result);
+        if (result == ERROR_READ_CHANNEL_400) {
+            strcat(body, "Invalid request\3");
+        } else if (result == ERROR_READ_CHANNEL_404) {
+            strcat(body, "Channel name NOT found\3");
+        } else if (result == ERROR_CREATE_CHANNEL_500) {
+            strcat(body, "Internal server error\3");
+        } else {
+            printw("the result of read_and_read_channel is wrong\n");
+            refresh();
+            return -1;
+        }
+    }
+
+    uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_read_channel_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_read_channel_response)");
         return -1;
     }
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
