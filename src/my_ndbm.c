@@ -22,7 +22,7 @@ extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
 
-
+/* open DB */
 DBM* open_db_or_null(const char* db_name, int flag)
 {
     DBM* db = dbm_open(db_name, flag, 0644);
@@ -33,6 +33,7 @@ DBM* open_db_or_null(const char* db_name, int flag)
     return db;
 }
 
+/* Get functions */
 user_login_t* get_login_info_malloc_or_null(char* login_token)
 {
     DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO_PATH, O_RDONLY | O_SYNC);
@@ -99,6 +100,31 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid)
     return user_acc;
 }
 
+char* get_uuid_with_display_name_or_null(char* display_name)
+{
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
+    if (display_names == NULL) {
+        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        return NULL;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = display_name;
+    key.dsize = strlen(display_name);
+
+    value = dbm_fetch(display_names, key);
+    if (value.dptr == NULL) {
+        dbm_close(display_names);
+        return NULL;
+    }
+
+    dbm_close(display_names);
+    return (char*) value.dptr;
+}
+
 message_info_t* get_message_malloc_or_null(char* user_token)
 {
     DBM* message_db = open_db_or_null(DB_MESSAGES, O_RDONLY | O_SYNC);
@@ -131,6 +157,36 @@ message_info_t* get_message_malloc_or_null(char* user_token)
     return message;
 }
 
+channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
+{
+    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
+    if (channel_infos == NULL) {
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        return NULL;
+    }
+
+    datum key, value;
+    // Iterate through all keys and values
+    for (key = dbm_firstkey(channel_infos); key.dptr != NULL; key = dbm_nextkey(channel_infos)) {
+        value = dbm_fetch(channel_infos, key);
+        if (value.dptr == NULL) {
+            perror("dbm_fetch");
+            dbm_close(channel_infos);
+            return NULL;
+        }
+        channel_info_t* k_channel = (channel_info_t*) value.dptr;
+        if (strcmp(k_channel->channel_name, channel_name) == 0) {
+            channel_info_t* ret_channel_info = (channel_info_t*) malloc(sizeof(channel_info_t));
+            memcpy(ret_channel_info, k_channel, sizeof(channel_info_t));
+            return ret_channel_info;
+        }
+    }
+
+    dbm_close(channel_infos);
+    return NULL;
+}
+
+/* Check duplicates functions */
 bool check_duplicate_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
@@ -183,31 +239,7 @@ bool check_duplicate_channel_name(char* channel_name)
     return false;
 }
 
-char* get_uuid_with_display_name_or_null(char* display_name)
-{
-    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
-    if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
-        return NULL;
-    }
-
-    datum key, value;
-    memset(&key, 0, sizeof(datum));
-    memset(&value, 0, sizeof(datum));
-
-    key.dptr = display_name;
-    key.dsize = strlen(display_name);
-
-    value = dbm_fetch(display_names, key);
-    if (value.dptr == NULL) {
-        dbm_close(display_names);
-        return NULL;
-    }
-
-    dbm_close(display_names);
-    return (char*) value.dptr;
-}
-
+/* Insert functions */
 int insert_user_account(user_account_t* user_account)
 {
     DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
@@ -316,6 +348,34 @@ int insert_channel_info(channel_info_t* channel_info)
     return 0;
 }
 
+int insert_message(message_info_t * message)
+{
+    DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    if (user_messages == NULL) {
+        perror("[DB]Error: Failed to open DB_MESSAGES DB");
+        return -1;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = message->message_id;
+    key.dsize = strlen(message->message_id);
+    value.dptr = message;
+    value.dsize = sizeof(message_info_t );
+
+    if (dbm_store(user_messages, key, value, DBM_REPLACE) != 0) {
+        perror("[DB]Error: Failed to insert user login information\n");
+        dbm_close(user_messages);
+        return -1;
+    }
+
+    dbm_close(user_messages);
+    return 0;
+}
+
+/* Remove functions */
 int remove_user_account(char* user_id)
 {
     DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
@@ -385,61 +445,5 @@ int remove_user_login(char* login_token)
     }
 
     dbm_close(user_logins);
-    return 0;
-}
-
-channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
-{
-    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
-    if (channel_infos == NULL) {
-        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
-        return NULL;
-    }
-
-    datum key, value;
-    // Iterate through all keys and values
-    for (key = dbm_firstkey(channel_infos); key.dptr != NULL; key = dbm_nextkey(channel_infos)) {
-        value = dbm_fetch(channel_infos, key);
-        if (value.dptr == NULL) {
-            perror("dbm_fetch");
-            dbm_close(channel_infos);
-            return NULL;
-        }
-        channel_info_t* k_channel = (channel_info_t*) value.dptr;
-        if (strcmp(k_channel->channel_name, channel_name) == 0) {
-            channel_info_t* ret_channel_info = (channel_info_t*) malloc(sizeof(channel_info_t));
-            memcpy(ret_channel_info, k_channel, sizeof(channel_info_t));
-            return ret_channel_info;
-        }
-    }
-
-    dbm_close(channel_infos);
-    return NULL;
-}
-
-int insert_message(message_info_t * message)
-{
-    DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
-    if (user_messages == NULL) {
-        perror("[DB]Error: Failed to open DB_MESSAGES DB");
-        return -1;
-    }
-
-    datum key, value;
-    memset(&key, 0, sizeof(datum));
-    memset(&value, 0, sizeof(datum));
-
-    key.dptr = message->message_id;
-    key.dsize = strlen(message->message_id);
-    value.dptr = message;
-    value.dsize = sizeof(message_info_t );
-
-    if (dbm_store(user_messages, key, value, DBM_REPLACE) != 0) {
-        perror("[DB]Error: Failed to insert user login information\n");
-        dbm_close(user_messages);
-        return -1;
-    }
-
-    dbm_close(user_messages);
     return 0;
 }
