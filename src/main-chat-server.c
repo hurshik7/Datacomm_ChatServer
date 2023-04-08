@@ -1,4 +1,3 @@
-#include "db_viewer.h"
 #include "error.h"
 #include "ncurses_ui.h"
 #include "option_handler.h"
