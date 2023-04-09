@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
                         int ch = getch();
                         if (ch == 'q') {
                             server_running = false;
+                            clear();
+                            refresh();
                         }
                         usleep(ONE_MILLISECOND); // Sleep for 1ms to avoid busy waiting
                     }
@@ -127,10 +129,14 @@ void* run_server_thread(void* arg)
     refresh();
 
     struct options* opts = (struct options*) arg;
-    run_server(opts);
+    if (run_server(opts) == 0) {
+        clear();
+        refresh();
+    } else {
+        printw("Please press \'q\' to go back to the menu\n");
+        refresh();
+    }
 
-    clear();
-    refresh();
     return NULL;
 }
 
@@ -149,7 +155,7 @@ int run_server(struct options* opts)
         return -1;
     }
     // set the option
-    if (setsockopt(opts->server_sock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) {
+    if (setsockopt(opts->server_sock, SOL_SOCKET, SO_REUSEPORT, &option, sizeof(option)) < 0) {
         close(opts->server_sock);
         printw("[SERVER] failure to setup the socket. please try again later\n");
         refresh();
