@@ -22,7 +22,7 @@
 #define DB_DISPLAY_NAMES "display_names"
 #define DB_USER_ACCOUNT "user_account_info"
 #define DB_CHANNEL_INFO "channel_info"
-#define DB_MESSAGES "messages_info"
+#define DB_MESSAGE_INFO "messages_info"
 
 
 typedef struct UserLoginInfo {

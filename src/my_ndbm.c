@@ -21,6 +21,7 @@ extern char DB_LOGIN_INFO_PATH[PATH_MAX];
 extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
+extern char DB_MESSAGE_INFO_PATH[PATH_MAX];
 
 /* open DB */
 DBM* open_db_or_null(const char* db_name, int flag)
@@ -127,7 +128,7 @@ char* get_uuid_with_display_name_or_null(char* display_name)
 
 message_info_t* get_message_malloc_or_null(char* user_token)
 {
-    DBM* message_db = open_db_or_null(DB_MESSAGES, O_RDONLY | O_SYNC);
+    DBM* message_db = open_db_or_null(DB_MESSAGE_INFO_PATH, O_RDONLY | O_SYNC);
     if (message_db == NULL) {
         return NULL;
     }
@@ -350,7 +351,7 @@ int insert_channel_info(channel_info_t* channel_info)
 
 int insert_message(message_info_t * message)
 {
-    DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
+    DBM* user_messages = open_db_or_null(DB_MESSAGE_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_messages == NULL) {
         //perror("[DB]Error: Failed to open DB_MESSAGES DB");
         return -1;
@@ -361,9 +362,9 @@ int insert_message(message_info_t * message)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = message->message_id;
-    key.dsize = strlen(message->message_id);
+    key.dsize = UUID_LEN;
     value.dptr = message;
-    value.dsize = sizeof(message_info_t );
+    value.dsize = sizeof(message_info_t);
 
     if (dbm_store(user_messages, key, value, DBM_REPLACE) != 0) {
         perror("[DB]Error: Failed to insert user login information\n");
