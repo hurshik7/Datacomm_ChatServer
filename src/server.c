@@ -10,6 +10,7 @@
 #include <time.h>
 
 #define MAX_CLIENTS (255)
+#define TEMP_CHANNEL_INFO_LENGTH (8192)
 
 extern connected_user active_users[MAX_CLIENTS];
 
@@ -64,7 +65,9 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
                 result = read_and_create_channel(fd, token, header.body_size, clnt_addr);
                 send_create_channel_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_READ) {
-
+                char channel_info_out[TEMP_CHANNEL_INFO_LENGTH] = { '\0', };
+                result = read_and_read_channel(fd, channel_info_out, header.body_size);
+                send_read_channel_response(fd, header, result, channel_info_out, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -527,7 +530,7 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     ssize_t nread = read(fd, buffer, body_size);
     if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
-        return -1;
+        return ERROR_CREATE_CHANNEL_500;
     }
 
     // log
@@ -701,6 +704,110 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
     free(channel);
     free(user_account);
     return ERROR_USER_DOES_NOT_EXIST;
+}
+
+int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
+{
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
+        perror("[SERVER]Error: read body");
+        return ERROR_READ_CHANNEL_500;
+    }
+
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
+    char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
+    bool is_get_user_list = false;
+    bool is_get_admin_list = false;
+    bool is_get_banned_list = false;
+
+    char* token = strtok(buffer, "\3"); // channel_name
+    if (token == NULL) {
+        return ERROR_READ_CHANNEL_400;
+    }
+    strncpy(channel_name, token, strlen(token));
+
+    token = strtok(NULL, "\3"); // get_user_list
+    if (token == NULL) {
+        return ERROR_READ_CHANNEL_400;
+    }
+    if (strcmp(token, "1") == 0) {
+        is_get_user_list = true;
+    }
+
+    token = strtok(NULL, "\3"); // get_admin_list
+    if (token == NULL) {
+        return ERROR_READ_CHANNEL_400;
+    }
+    if (strcmp(token, "1") == 0) {
+        is_get_admin_list = true;
+    }
+
+    token = strtok(NULL, "\3"); // get_banned_list
+    if (token == NULL) {
+        return ERROR_READ_CHANNEL_400;
+    }
+    if (strcmp(token, "1") == 0) {
+        is_get_banned_list = true;
+    }
+
+    channel_info_t* channel_info = get_channel_info_malloc_or_null(channel_name);
+    if (channel_info == NULL) {
+        // if not found -> return 404
+        return ERROR_READ_CHANNEL_404;
+    }
+    // if found copy past the info into token_out
+    memset(channel_info_out, '\0', TEMP_CHANNEL_INFO_LENGTH); // TEMP_CHANNEL_INFO_LENGTH: 4096 -> if it is not enough, we should use malloc() for this.
+    sprintf(channel_info_out, "%s\3%s\3%d\3", channel_info->channel_name, channel_info->creator, channel_info->publicity);
+    if (is_get_user_list == true) {
+        char temp_user_list[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        int i = 0;
+        while (i < DEFAULT_LIST_SIZE && channel_info->user_list[i][0] != '\0') {
+            sprintf(temp_user_list, "%s\3", channel_info->user_list[i]); // Overflow can be occurred
+            i++;
+        }
+        char final_buffer[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        sprintf(final_buffer, "%d\3%s", i, temp_user_list); // Overflow can be occurred
+        strcat(channel_info_out, final_buffer); // Overflow can be occurred
+        if (i == 0) {
+            strcat(channel_info_out, "\3"); // Overflow can be occurred
+        }
+    }
+    if (is_get_admin_list == true) {
+        char temp_admin_list[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        int i = 0;
+        while (i < DEFAULT_LIST_SIZE && channel_info->admin_list[i][0] != '\0') {
+            sprintf(temp_admin_list, "%s\3", channel_info->admin_list[i]); // Overflow can be occurred
+            i++;
+        }
+        char final_buffer[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        sprintf(final_buffer, "%d\3%s", i, temp_admin_list); // Overflow can be occurred
+        strcat(channel_info_out, final_buffer); // Overflow can be occurred
+        if (i == 0) {
+            strcat(channel_info_out, "\3"); // Overflow can be occurred
+        }
+    }
+    if (is_get_banned_list == true) {
+        char temp_banned_list[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        int i = 0;
+        while (i < DEFAULT_LIST_SIZE && channel_info->banned_list[i][0] != '\0') {
+            sprintf(temp_banned_list, "%s\3", channel_info->admin_list[i]); // Overflow can be occurred
+            i++;
+        }
+        char final_buffer[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+        sprintf(final_buffer, "%d\3%s", i, temp_banned_list); // Overflow can be occurred
+        strcat(channel_info_out, final_buffer); // Overflow can be occurred
+        if (i == 0) {
+            strcat(channel_info_out, "\3"); // Overflow can be occurred
+        }
+    }
+
+    free(channel_info);
+    return 0;
 }
 
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
@@ -1007,11 +1114,11 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
     uint32_t header_int = create_response_header(&header);
 
     if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
-        perror("send header (send_create_user_response)");
+        perror("send header (send_create_channel_response)");
         return -1;
     }
     if (write(fd, body, body_size) < 0) {
-        perror("send body (send_create_user_response)");
+        perror("send body (send_create_channel_response)");
         return -1;
     }
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
@@ -1059,6 +1166,44 @@ int send_create_message_response(int fd, chat_header_t header, int result, const
     }
     if (write(fd, body, body_size) < 0) {
         perror("send body (send_create_message_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
+}
+
+int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr)
+{
+    char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "200\3\0");
+        strcat(body, channel_info_token);
+    } else {
+        sprintf(body, "%d\3", result);
+        if (result == ERROR_READ_CHANNEL_400) {
+            strcat(body, "Invalid request\3");
+        } else if (result == ERROR_READ_CHANNEL_404) {
+            strcat(body, "Channel name NOT found\3");
+        } else if (result == ERROR_CREATE_CHANNEL_500) {
+            strcat(body, "Internal server error\3");
+        } else {
+            printw("the result of read_and_read_channel is wrong\n");
+            refresh();
+            return -1;
+        }
+    }
+
+    uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_read_channel_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_read_channel_response)");
         return -1;
     }
     printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
@@ -1254,3 +1399,4 @@ char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_L
     }
     return dis_name;
 }
+
