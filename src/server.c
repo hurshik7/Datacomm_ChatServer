@@ -39,6 +39,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     assert(header.version_type.version == CURRENT_VERSION);
     // do server base on request, read body if it needs to
     char token[TOKEN_NAME_LENGTH] = { '\0', };
+    char forward_token[DEFAULT_BUFFER];
     switch (header.object) {
         case OBJECT_USER:
             if (header.version_type.type == TYPE_CREATE) {
@@ -81,18 +82,18 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             break;
         case OBJECT_MESSAGE:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_message(fd, token, cache);
+                result = read_and_create_message(fd, token, forward_token, cache);
                 send_create_message_response(fd, header, result, token, clnt_addr);
-//                channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
-//                for (int i = 0; i <= get_num_connected_users(cache); i++) {
-                    // function that takes cache[i]->display_name as param that searches and
-                    // returns true if current display_name in current_channel->user_list matches
-                        // if true
-                            // int user_in_channel_fd = cache[i]->fd
-                            // char* this_ip_addr = cache[i]->in_channel_ip_addr
-                            // send_create_message_response(user_in_channel_fd, header, SUCCESS_FORWARD_REQ, this_ip_addr)
-                        // else continue;
-//                }
+                channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
+                for (int i = 0; i < get_num_connected_users(cache); i++) {
+                    connected_user *user = &cache[i];
+                    if (check_if_user_in_channel(user->dsply_name, current_channel)) {
+                        int user_in_channel_fd = user->fd;
+                        char *this_ip_addr = user->ip_address;
+                        send_create_message_response(user_in_channel_fd, header, SUCCESS_FORWARD_REQ,
+                                                     forward_token, this_ip_addr);
+                    }
+                }
             } else if (header.version_type.type == TYPE_READ) {
 
             } else if (header.version_type.type == TYPE_UPDATE) {
@@ -401,7 +402,11 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         login_user_account_malloc_or_null(user_account, clnt_addr);
         insert_user_account(user_account);
     }
-    strncpy(token_out, user_account->display_name, TOKEN_NAME_LENGTH);
+
+    // TODO WORKING ON THIS
+    char display_name[DSPLY_NAME_LENGTH] = { '\0', };
+    strncpy(display_name, user_account->display_name, TOKEN_NAME_LENGTH);
+    strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
 
     // store user in active user cache upon successful login
     if (find_connected_user_with_same_cred(user_account, cache,
@@ -597,7 +602,7 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     return 0;
 }
 
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache)
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
@@ -610,6 +615,9 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
     // log
     printw("[Body]nread: %d, body: %s\n", nread, buffer);
     refresh();
+
+    // for forwarding the init req
+    strncpy(forward_token, buffer, DEFAULT_BUFFER);
 
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
     char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
@@ -624,6 +632,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
     token = strtok(NULL, "\3");
     strncpy(timestamp, token, strlen(token)); // time stamp
 
+    // for init res to sender
     strncpy(token_out, channel_name, TOKEN_NAME_LENGTH);
 
     // check if all fields in dispatch are present

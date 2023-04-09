@@ -240,6 +240,16 @@ bool check_duplicate_channel_name(char* channel_name)
     return false;
 }
 
+bool check_if_user_in_channel(const char* display_name, const channel_info_t* channel)
+{
+    for (int i = 0; i < DEFAULT_LIST_SIZE; i++) {
+        if (strcmp(display_name, channel->user_list[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* Insert functions */
 int insert_user_account(user_account_t* user_account)
 {

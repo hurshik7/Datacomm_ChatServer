@@ -70,6 +70,7 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
 /* Check functions */
 bool check_duplicate_display_name(char* display_name);
 bool check_duplicate_channel_name(char* channel_name);
+bool check_if_user_in_channel(const char* display_name, const channel_info_t* channel);
 
 /* Insert functions */
 int insert_user_account(user_account_t* user_account);
