@@ -27,7 +27,7 @@ DBM* open_db_or_null(const char* db_name, int flag)
 {
     DBM* db = dbm_open(db_name, flag, 0644);
     if (!db) {
-        perror("[DB]Error: Failed to open database");
+        //perror("[DB]Error: Failed to open database");
         return NULL;
     }
     return db;
@@ -38,7 +38,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
 {
     DBM* login_info_db = open_db_or_null(DB_LOGIN_INFO_PATH, O_RDONLY | O_SYNC);
     if (login_info_db == NULL) {
-        perror("[DB]Error: Failed to open LOGIN_INFO DB");
+        //perror("[DB]Error: Failed to open LOGIN_INFO DB");
         return NULL;
     }
 
@@ -104,7 +104,7 @@ char* get_uuid_with_display_name_or_null(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
     if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        //perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return NULL;
     }
 
@@ -161,7 +161,7 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
-        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
         return NULL;
     }
 
@@ -191,7 +191,7 @@ bool check_duplicate_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
     if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        //perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return false;
     }
 
@@ -216,7 +216,7 @@ bool check_duplicate_channel_name(char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
-        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
         return false;
     }
 
@@ -244,7 +244,7 @@ int insert_user_account(user_account_t* user_account)
 {
     DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_accounts == NULL) {
-        perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
+        //perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
         return -1;
     }
 
@@ -271,7 +271,7 @@ int insert_display_name(char* display_name, char* uuid)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        //perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return -1;
     }
 
@@ -285,7 +285,7 @@ int insert_display_name(char* display_name, char* uuid)
     value.dsize = UUID_LEN;
 
     if (dbm_store(display_names, key, value, DBM_REPLACE) != 0) {
-        perror("[DB]Error: Failed to insert display_name\n");
+        //perror("[DB]Error: Failed to insert display_name\n");
         dbm_close(display_names);
         return -1;
     }
@@ -298,7 +298,7 @@ int insert_user_login(user_login_t* user_login)
 {
     DBM* user_logins = open_db_or_null(DB_LOGIN_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_logins == NULL) {
-        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        //perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
         return -1;
     }
 
@@ -325,7 +325,7 @@ int insert_channel_info(channel_info_t* channel_info)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (channel_infos == NULL) {
-        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
         return -1;
     }
 
@@ -352,7 +352,7 @@ int insert_message(message_info_t * message)
 {
     DBM* user_messages = open_db_or_null(DB_MESSAGES, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_messages == NULL) {
-        perror("[DB]Error: Failed to open DB_MESSAGES DB");
+        //perror("[DB]Error: Failed to open DB_MESSAGES DB");
         return -1;
     }
 
@@ -380,7 +380,7 @@ int remove_user_account(char* user_id)
 {
     DBM* user_accounts = open_db_or_null(DB_USER_ACCOUNT_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_accounts == NULL) {
-        perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
+        //perror("[DB]Error: Failed to open DB_USER_ACCOUNT DB");
         return -1;
     }
 
@@ -404,7 +404,7 @@ int remove_display_name(char* display_name)
 {
     DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (display_names == NULL) {
-        perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
+        //perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return -1;
     }
 
@@ -428,7 +428,7 @@ int remove_user_login(char* login_token)
 {
     DBM* user_logins = open_db_or_null(DB_LOGIN_INFO_PATH, O_CREAT | O_RDWR | O_SYNC | O_APPEND);
     if (user_logins == NULL) {
-        perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
+        //perror("[DB]Error: Failed to open DB_LOGIN_INFO DB");
         return -1;
     }
 
