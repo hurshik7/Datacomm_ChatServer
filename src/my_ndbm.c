@@ -448,3 +448,80 @@ int remove_user_login(char* login_token)
     dbm_close(user_logins);
     return 0;
 }
+
+/* Update functions */
+int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity)
+{
+    DBM* channel_info_db = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDWR | O_SYNC);
+    if (channel_info_db == NULL) {
+        return -1;
+    }
+
+    channel_info_t* fetched_channel = get_channel_info_malloc_or_null(channel_name);
+    if (fetched_channel == NULL) {
+        dbm_close(channel_info_db);
+        return -1;
+    }
+
+    strncpy(fetched_channel->channel_name, new_channel_name, TOKEN_NAME_LENGTH);
+    fetched_channel->publicity = new_publicity;
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = fetched_channel->channel_id;
+    key.dsize = UUID_LEN;
+    value.dptr = fetched_channel;
+    value.dsize = sizeof(channel_info_t);
+    if (dbm_store(channel_info_db, key, value, DBM_REPLACE) != 0) {
+        dbm_close(channel_info_db);
+        return -1;
+    }
+
+    dbm_close(channel_info_db);
+    free(fetched_channel);
+    return 0;
+}
+
+int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH])
+{
+    DBM* channel_info_db = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDWR | O_SYNC);
+    if (channel_info_db == NULL) {
+        return -1;
+    }
+
+    channel_info_t* fetched_channel = get_channel_info_malloc_or_null(channel_name);
+    if (fetched_channel == NULL) {
+        return -1;
+    }
+
+    int i = 0;
+    int j = 0;
+    while (j < DEFAULT_LIST_SIZE && fetched_channel->user_list[j][0] != '\0') {
+        j++;
+    }
+    // does not check if a user already exists before adding them
+    while (j < DEFAULT_LIST_SIZE && i < DEFAULT_LIST_SIZE && users_to_add[i][0] != '\0') {
+        strncpy(fetched_channel->user_list[j++], users_to_add[i], TOKEN_NAME_LENGTH);
+        i++;
+    }
+
+    datum key, value;
+    memset(&key, 0, sizeof(datum));
+    memset(&value, 0, sizeof(datum));
+
+    key.dptr = fetched_channel->channel_id;
+    key.dsize = UUID_LEN;
+    value.dptr = fetched_channel;
+    value.dsize = sizeof(channel_info_t);
+
+    if (dbm_store(channel_info_db, key, value, DBM_REPLACE) != 0) {
+        dbm_close(channel_info_db);
+        return -1;
+    }
+
+    dbm_close(channel_info_db);
+    free(fetched_channel);
+    return 0;
+}

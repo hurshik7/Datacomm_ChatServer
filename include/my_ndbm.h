@@ -83,6 +83,10 @@ int remove_user_account(char* user_id);
 int remove_display_name(char* display_name);
 int remove_user_login(char* login_token);
 
+/* Update functions */
+int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity);
+int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH]);
+
 
 #endif /* MY_NDBM_H */
 
