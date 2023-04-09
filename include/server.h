@@ -105,7 +105,7 @@ int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size);
 int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr);
 
 /* related to MESSAGE */
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache);
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache);
 int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
                                                 char* message_body, const uint8_t* timestamp);
