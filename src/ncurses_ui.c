@@ -11,6 +11,7 @@ extern char DB_LOGIN_INFO_PATH[PATH_MAX];
 extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
+extern char DB_MESSAGE_INFO_PATH[PATH_MAX];
 
 
 void print_menu(WINDOW *menu_win, int highlight)
@@ -107,7 +108,8 @@ void print_db_paths(WINDOW* db_win, int startx)
     mvwprintw(db_win, y++, startx, "%s: %s", "User Login info", DB_LOGIN_INFO_PATH);
     mvwprintw(db_win, y++, startx, "%s: %s", "Display names", DB_DISPLAY_NAMES_PATH);
     mvwprintw(db_win, y++, startx, "%s: %s", "User account", DB_USER_ACCOUNT_PATH);
-    mvwprintw(db_win, y, startx, "%s: %s", "Channel info", DB_CHANNEL_INFO_PATH);
+    mvwprintw(db_win, y++, startx, "%s: %s", "Channel info", DB_CHANNEL_INFO_PATH);
+    mvwprintw(db_win, y, startx, "%s: %s", "Message info", DB_MESSAGE_INFO_PATH);
     wrefresh(db_win);
 }
 

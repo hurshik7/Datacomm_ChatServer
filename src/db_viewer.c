@@ -7,6 +7,7 @@ extern char DB_LOGIN_INFO_PATH[PATH_MAX];
 extern char DB_DISPLAY_NAMES_PATH[PATH_MAX];
 extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
+extern char DB_MESSAGE_INFO_PATH[PATH_MAX];
 
 
 void printAllUserAccounts(DBM *db)
