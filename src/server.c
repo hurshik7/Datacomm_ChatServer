@@ -69,7 +69,9 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
                 result = read_and_read_channel(fd, channel_info_out, header.body_size);
                 send_read_channel_response(fd, header, result, channel_info_out, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
-
+                char channel_info_out[TEMP_CHANNEL_INFO_LENGTH] = { '\0', };
+                result = read_and_update_channel(fd, channel_info_out, header.body_size);
+                send_update_channel_response(fd, header, result, channel_info_out, clnt_addr);
             } else if (header.version_type.type == TYPE_DESTROY) {
 
             } else {
@@ -810,6 +812,334 @@ int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
     return 0;
 }
 
+int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
+{
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
+        perror("[SERVER]Error: read body");
+        return ERROR_UPDATE_CHANNEL_500;
+    }
+
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+    //
+
+    char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char new_channel_name[TOKEN_NAME_LENGTH] = { '\0', };
+    bool is_change_name = false;
+    bool is_change_publicity = false;
+    bool new_publicity = false;
+    char alter_users[2] = { '\0', };
+    char alter_admins[2] = { '\0', };
+    char alter_banned[2] = { '\0', };
+    char add_user_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+    char remove_user_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+    char add_admin_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+    char remove_admin_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+    char add_banned_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+    char remove_banned_list[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH] = { 0, };
+
+    char* token = strtok(buffer, "\3"); // channel_name
+    if (token == NULL) {
+        return ERROR_READ_CHANNEL_400;
+    }
+    strncpy(channel_name, token, strlen(token));
+
+    token = strtok(NULL, "\3"); // change the channel name?
+    if (token == NULL) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+    if (strcmp(token, "1") == 0) {
+        is_change_name = true;
+    }
+
+    if (is_change_name == true) {
+        token = strtok(NULL, "\3"); // new channel name
+        if (token == NULL) {
+            return ERROR_UPDATE_CHANNEL_400;
+        }
+        strncpy(new_channel_name, token, TOKEN_NAME_LENGTH);
+    }
+
+    token = strtok(NULL, "\3"); // change the channel publicity?
+    if (token == NULL) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+    if (strcmp(token, "1") == 0) {
+        is_change_publicity = true;
+    }
+
+    if (is_change_publicity == true) {
+        token = strtok(NULL, "\3"); // new publicity
+        if (token == NULL) {
+            return ERROR_UPDATE_CHANNEL_400;
+        }
+        if (strcmp(token, "1") == 0) {
+            new_publicity = true;
+        }
+    }
+
+    token = strtok(NULL, "\3"); // alter_users
+    if (token == NULL || strlen(token) > 1) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+    strncpy(alter_users, token, 1);
+
+    // “0” indicates that no change is to be made.
+    // “1” indicates that Users are being added to a list.
+    // “2” indicates that Users are being removed from a list.
+    // “3” indicates that Users are both being added to and removed from a list.
+    char* endptr;
+    switch (alter_users[0]) {
+        case '0':
+            break;
+        case '1':
+        case '3':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_add = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_add; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(add_user_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            if (alter_users[0] == '1') {
+                break;
+            }
+        case '2':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_remove = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_remove; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(remove_user_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            break;
+        default:
+            assert("read_and_update_channel(), alter_users is wrong");
+    }
+
+    token = strtok(NULL, "\3"); // alter_admins
+    if (token == NULL || strlen(token) > 1) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+    strncpy(alter_admins, token, 1);
+    switch (alter_admins[0]) {
+        case '0':
+            break;
+        case '1':
+        case '3':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_add = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_add; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(add_admin_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            if (alter_admins[0] == '1') {
+                break;
+            }
+        case '2':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_remove = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_remove; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(remove_admin_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            break;
+        default:
+            assert("read_and_update_channel(), alter_users is wrong");
+    }
+
+    token = strtok(NULL, "\3"); // alter_banned
+    if (token == NULL || strlen(token) > 1) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+    strncpy(alter_banned, token, 1);
+    switch (alter_banned[0]) {
+        case '0':
+            break;
+        case '1':
+        case '3':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_add = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_add; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(add_banned_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            if (alter_banned[0] == '1') {
+                break;
+            }
+        case '2':
+            token = strtok(NULL, "\3"); // the number of users to add
+            if (token == NULL) {
+                return ERROR_UPDATE_CHANNEL_400;
+            }
+            int num_of_users_to_remove = (int) strtol(token, &endptr, 10);
+
+            for (int i = 0; i < num_of_users_to_remove; i++) {
+                token = strtok(NULL, "\3");
+                if (token == NULL) {
+                    return ERROR_UPDATE_CHANNEL_400;
+                }
+                strncpy(remove_banned_list[i], token, TOKEN_NAME_LENGTH);
+            }
+            break;
+        default:
+            assert("read_and_update_channel(), alter_users is wrong");
+    }
+
+    token = strtok(NULL, "\3");
+    if (token != NULL) {
+        return ERROR_UPDATE_CHANNEL_400;
+    }
+
+    // Channel name check -> 404
+    channel_info_t* channel = get_channel_info_malloc_or_null(channel_name);
+    if (channel == NULL) {
+        return ERROR_UPDATE_CHANNEL_404;
+    }
+
+    // display names in list check -> 404
+    int t = 0;
+    while (t < DEFAULT_LIST_SIZE && add_user_list[t][0] != '\0') {
+        if (check_duplicate_display_name(add_user_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+    t = 0;
+    while (t < DEFAULT_LIST_SIZE && remove_user_list[t][0] != '\0') {
+        if (check_duplicate_display_name(remove_user_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+    t = 0;
+    while (t < DEFAULT_LIST_SIZE && add_admin_list[t][0] != '\0') {
+        if (check_duplicate_display_name(add_admin_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+    t = 0;
+    while (t < DEFAULT_LIST_SIZE && remove_admin_list[t][0] != '\0') {
+        if (check_duplicate_display_name(remove_admin_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+    t = 0;
+    while (t < DEFAULT_LIST_SIZE && add_banned_list[t][0] != '\0') {
+        if (check_duplicate_display_name(add_banned_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+    t = 0;
+    while (t < DEFAULT_LIST_SIZE && remove_banned_list[t][0] != '\0') {
+        if (check_duplicate_display_name(remove_banned_list[t++]) == false) {
+            return ERROR_UPDATE_CHANNEL_404;
+        }
+    }
+
+    // update channel - it only supports the add users for now. TODO
+    int update_result;
+    if (is_change_name == true || is_change_publicity == true) {
+        update_result = update_channel_name_and_publicity(channel_name, new_channel_name, new_publicity);
+        if (update_result != 0) {
+            return ERROR_UPDATE_CHANNEL_500;
+        }
+    }
+    if (alter_users[0] != '0') {
+        update_result = add_users_on_channel(channel_name, add_user_list);
+        if (update_result != 0) {
+            return ERROR_UPDATE_CHANNEL_500;
+        }
+    }
+
+    // TODO ping the changed state
+
+    // copy token out
+    channel_info_t* updated_channel = get_channel_info_malloc_or_null(new_channel_name);
+    if (updated_channel == NULL) {
+        return ERROR_UPDATE_CHANNEL_500;
+    }
+    memset(channel_info_out, '\0', TEMP_CHANNEL_INFO_LENGTH);
+    sprintf(channel_info_out, "%s\3%s\3%d\3", updated_channel->channel_name, updated_channel->creator, updated_channel->publicity);
+
+    char temp_user_list[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+    int i = 0;
+    while (i < DEFAULT_LIST_SIZE && updated_channel->user_list[i][0] != '\0') {
+        sprintf(temp_user_list, "%s\3", updated_channel->user_list[i]); // Overflow can be occurred
+        i++;
+    }
+    char final_buffer[(TEMP_CHANNEL_INFO_LENGTH / 4) * 3] = { '\0', };
+    sprintf(final_buffer, "%d\3%s", i, temp_user_list); // Overflow can be occurred
+    strcat(channel_info_out, final_buffer); // Overflow can be occurred
+    if (i == 0) {
+        strcat(channel_info_out, "\3"); // Overflow can be occurred
+    }
+
+    memset(temp_user_list, '\0', (TEMP_CHANNEL_INFO_LENGTH / 4) * 3);
+    i = 0;
+    while (i < DEFAULT_LIST_SIZE && updated_channel->admin_list[i][0] != '\0') {
+        sprintf(temp_user_list, "%s\3", updated_channel->admin_list[i]); // Overflow can be occurred
+        i++;
+    }
+    memset(final_buffer, '\0', (TEMP_CHANNEL_INFO_LENGTH / 4) * 3);
+    sprintf(final_buffer, "%d\3%s", i, temp_user_list); // Overflow can be occurred
+    strcat(channel_info_out, final_buffer); // Overflow can be occurred
+    if (i == 0) {
+        strcat(channel_info_out, "\3"); // Overflow can be occurred
+    }
+
+    memset(temp_user_list, '\0', (TEMP_CHANNEL_INFO_LENGTH / 4) * 3);
+    i = 0;
+    while (i < DEFAULT_LIST_SIZE && updated_channel->banned_list[i][0] != '\0') {
+        sprintf(temp_user_list, "%s\3", updated_channel->banned_list[i]); // Overflow can be occurred
+        i++;
+    }
+    memset(final_buffer, '\0', (TEMP_CHANNEL_INFO_LENGTH / 4) * 3);
+    sprintf(final_buffer, "%d\3%s", i, temp_user_list); // Overflow can be occurred
+    strcat(channel_info_out, final_buffer); // Overflow can be occurred
+    if (i == 0) {
+        strcat(channel_info_out, "\3"); // Overflow can be occurred
+    }
+
+    free(updated_channel);
+    return 0;
+}
+
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
 {
     user_login_t* user_login = (user_login_t*) malloc(sizeof(user_login_t));
@@ -1211,6 +1541,44 @@ int send_read_channel_response(int fd, chat_header_t header, int result, const c
     return 0;
 }
 
+int send_update_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr)
+{
+    char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "200\3\0");
+        strcat(body, channel_info_token);
+    } else {
+        sprintf(body, "%d\3", result);
+        if (result == ERROR_READ_CHANNEL_400) {
+            strcat(body, "Invalid request\3");
+        } else if (result == ERROR_READ_CHANNEL_404) {
+            strcat(body, "Channel name or user's display name NOT found\3");
+        } else if (result == ERROR_CREATE_CHANNEL_500) {
+            strcat(body, "Internal server error\3");
+        } else {
+            printw("the result of read_and_read_channel is wrong\n");
+            refresh();
+            return -1;
+        }
+    }
+
+    uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_read_channel_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_read_channel_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
+}
+
 int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
@@ -1399,4 +1767,3 @@ char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_L
     }
     return dis_name;
 }
-

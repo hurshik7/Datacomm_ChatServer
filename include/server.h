@@ -53,6 +53,10 @@
 #define ERROR_READ_CHANNEL_400 (400)
 #define ERROR_READ_CHANNEL_404 (404)
 
+#define ERROR_UPDATE_CHANNEL_500 (500)
+#define ERROR_UPDATE_CHANNEL_400 (400)
+#define ERROR_UPDATE_CHANNEL_404 (404)
+
 
 typedef struct version_type {
     uint8_t  version:4;
@@ -103,6 +107,8 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
 channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity);
 int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size);
 int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr);
+int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size);
+int send_update_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr);
 
 /* related to MESSAGE */
 int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected_user* cache);
@@ -110,7 +116,7 @@ int send_create_message_response(int fd, chat_header_t, int result, const char* 
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
                                                 char* message_body, const uint8_t* timestamp);
 
-/* related to Cache */
+/* related to Cache, Util */
 int get_num_connected_users(connected_user* cache);
 void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, user_login_t* login_info, int num_active_users);
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int num_active_users);
