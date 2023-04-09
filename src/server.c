@@ -708,7 +708,6 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], connected
 
 int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
 {
-    int result;
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
     ssize_t nread = read(fd, buffer, body_size);
