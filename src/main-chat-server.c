@@ -59,6 +59,11 @@ int main(int argc, char *argv[])
 
     int startx = (COLS - (int) strlen(TITLE)) / 2;
 
+    // initialize active users
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        memset(&(active_users[i]), 0, sizeof(connected_user));
+    }
+
     // Display menu
     while (!quit) {
         print_title(startx);
@@ -138,12 +143,16 @@ int run_server(struct options* opts)
     // Create a socket for the serve
     opts->server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (opts->server_sock < 0) {
-        fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        printw("[SERVER] failure to open the socket. try again\n");
+        refresh();
+        return -1;
     }
     // set the option
-    if (setsockopt(opts->server_sock, SOL_SOCKET, SO_REUSEPORT, &option, sizeof(option)) < 0) {
+    if (setsockopt(opts->server_sock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) < 0) {
         close(opts->server_sock);
-        fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        printw("[SERVER] failure to setup the socket. please try again later\n");
+        refresh();
+        return -1;
     }
 
     // Bind the socket to an address and port
@@ -154,18 +163,17 @@ int run_server(struct options* opts)
     server_addr.sin_port = htons(opts->port_in);
     if (bind(opts->server_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
         close(opts->server_sock);
-        fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        printw("[SERVER] the OS didn't release the port yet. please try again later\n");
+        refresh();
+        return -1;
     }
 
     // Listen for incoming connections
     if (listen(opts->server_sock, BACKLOG) < 0) {
         close(opts->server_sock);
-        fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
-    }
-
-    // initialize active users
-    for (int i = 0; i < MAX_CLIENTS; i++) {
-        memset(&(active_users[i]), 0, sizeof(connected_user));
+        printw("[SERVER] failure to listen the socket. please try again later\n");
+        refresh();
+        return -1;
     }
 
     // Initialize the pollfd structure for the poll-server socket
