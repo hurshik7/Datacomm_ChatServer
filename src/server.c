@@ -39,6 +39,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     assert(header.version_type.version == CURRENT_VERSION);
     // do server base on request, read body if it needs to
     char token[TOKEN_NAME_LENGTH] = { '\0', };
+    char big_token[BIG_TOKEN_NAME_LENGTH] = { '\0', };
     char forward_token[DEFAULT_BUFFER];
     switch (header.object) {
         case OBJECT_USER:
@@ -109,13 +110,14 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             // it relates to login(CREATE), logout(DESTROY)
             if (header.version_type.type == TYPE_CREATE) {
                 // TODO add terminate_and_restablish_connection check here
-                result = read_and_login_user(fd, token, clnt_addr, cache);
+                result = read_and_login_user(fd, big_token, clnt_addr, cache);
 //                if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
 //                    int terminate = find_duplicate_user(cache, get_num_connected_users(cache));
 //                    send_logout_user_response(terminate, header, result, token, clnt_addr);
 //                    send_login_user_response(fd, header, 0, token, clnt_addr);
 //                } else {
-                    send_login_user_response(fd, header, result, token, clnt_addr);
+                    send_login_user_response(fd, header, result, big_token, clnt_addr);
+                refresh();
 //                }
             } else if (header.version_type.type == TYPE_UPDATE) {
 
@@ -406,7 +408,26 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     // TODO WORKING ON THIS
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
     strncpy(display_name, user_account->display_name, TOKEN_NAME_LENGTH);
-    strncpy(token_out, display_name, TOKEN_NAME_LENGTH);
+
+    int privilege_level = user_account->privilege_level;
+
+    // Get all channels
+    channel_list_t* channel_list = get_all_channels();
+    if (channel_list == NULL) {
+        // Handle error
+        perror("No channels currently exist");
+    }
+
+    char* channel_name_list = build_channel_name_list(channel_list->channels, channel_list->channel_count);
+
+    // Construct the response body
+    char* response_body;
+    response_body = (char*) malloc(DEFAULT_BUFFER * sizeof(char));
+    snprintf(response_body, DEFAULT_BUFFER, "%s%c%d%c%d%c%s", display_name, '\3',
+             privilege_level, '\3', channel_list->channel_count, '\3', channel_name_list);
+
+    // Send the response body
+    strncpy(token_out, response_body, DEFAULT_BUFFER);
 
     // store user in active user cache upon successful login
     if (find_connected_user_with_same_cred(user_account, cache,
@@ -421,6 +442,8 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     free(user_account);
     free(login_info);
     free(clnt_uuid);
+    free(channel_name_list);
+    free_channel_list(channel_list);
     return 0;
     error_exit_no_such_token:
     free(login_info);
@@ -440,6 +463,30 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     // store user in active user cache upon successful login
     insert_user_in_cache(fd, cache, user_account, login_info, get_num_connected_users(cache));
     return TERMINATE_AND_RESTABLISH_CONNECTION;
+}
+
+char* build_channel_name_list(channel_info_t** channels, int channel_count)
+{
+    char* list = NULL;
+    size_t size = 0;
+    for (int i = 0; i < channel_count; i++) {
+        size += strlen(channels[i]->channel_name) + 1; // +1 for ETX
+    }
+    size++; // +1 for the final null terminator
+    list = malloc(size);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    size_t offset = 0;
+    for (int i = 0; i < channel_count; i++) {
+        strcpy(list + offset, channels[i]->channel_name);
+        offset += strlen(channels[i]->channel_name);
+        list[offset++] = '\3';
+    }
+    list[offset] = '\0';
+
+    return list;
 }
 
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
