@@ -95,6 +95,7 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
 
 /* related to AUTH */
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+char* build_channel_name_list(channel_info_t** channels, int channel_count);
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
