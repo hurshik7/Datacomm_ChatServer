@@ -57,6 +57,11 @@ typedef struct MessageInfo {
     uint8_t time_stamp[TIMESTAMP_SIZE];
 } message_info_t;
 
+typedef struct {
+    channel_info_t** channels;
+    int channel_count;
+} channel_list_t;
+
 /* open DB */
 DBM* open_db_or_null(const char* db_name, int flag);
 
@@ -66,6 +71,7 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid);
 char* get_uuid_with_display_name_or_null(char* display_name);
 message_info_t* get_message_malloc_or_null(char* user_token);
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
+channel_list_t* get_all_channels(void);
 
 /* Check functions */
 bool check_duplicate_display_name(char* display_name);
@@ -83,6 +89,7 @@ int insert_message(message_info_t * message);
 int remove_user_account(char* user_id);
 int remove_display_name(char* display_name);
 int remove_user_login(char* login_token);
+void free_channel_list(channel_list_t* channel_list);
 
 /* Update functions */
 int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity);
