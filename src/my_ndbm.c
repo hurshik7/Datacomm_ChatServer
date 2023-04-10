@@ -187,6 +187,58 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
     return NULL;
 }
 
+channel_list_t* get_all_channels(void)
+{
+//    printf("Entering get_all_channels function\n");
+    DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
+    if (channel_infos == NULL) {
+        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        return NULL;
+    }
+
+    // Allocate memory for the channel_list_t struct
+    channel_list_t* channel_list = malloc(sizeof(channel_list_t));
+    if (channel_list == NULL) {
+        dbm_close(channel_infos);
+        return NULL;
+    }
+    channel_list->channel_count = 0;
+    channel_list->channels = NULL;
+
+    datum key, value;
+    // Iterate through all keys and values
+    for (key = dbm_firstkey(channel_infos); key.dptr != NULL; key = dbm_nextkey(channel_infos)) {
+        value = dbm_fetch(channel_infos, key);
+        if (value.dptr == NULL) {
+            perror("dbm_fetch");
+            dbm_close(channel_infos);
+            free(channel_list);
+            return NULL;
+        }
+        channel_info_t* k_channel = (channel_info_t*) value.dptr;
+
+        // Reallocate memory for the channels array
+        channel_info_t** temp_channels = realloc(channel_list->channels, (channel_list->channel_count + 1) * sizeof(channel_info_t*));
+        if (temp_channels == NULL) {
+            perror("realloc");
+            dbm_close(channel_infos);
+            free_channel_list(channel_list);
+            return NULL;
+        }
+        channel_list->channels = temp_channels;
+
+        // Allocate memory for the new channel_info_t and copy the data
+        channel_list->channels[channel_list->channel_count] = malloc(sizeof(channel_info_t));
+        memcpy(channel_list->channels[channel_list->channel_count], k_channel, sizeof(channel_info_t));
+
+        channel_list->channel_count++;
+    }
+
+    dbm_close(channel_infos);
+//    printf("Exiting get_all_channels function\n");
+    return channel_list;
+}
+
 /* Check duplicates functions */
 bool check_duplicate_display_name(char* display_name)
 {
@@ -457,6 +509,19 @@ int remove_user_login(char* login_token)
 
     dbm_close(user_logins);
     return 0;
+}
+
+void free_channel_list(channel_list_t* channel_list)
+{
+//    printf("Entering free_channel_list function\n");
+    if (channel_list != NULL) {
+        for (int i = 0; i < channel_list->channel_count; i++) {
+            free(channel_list->channels[i]);
+        }
+        free(channel_list->channels);
+        free(channel_list);
+    }
+//    printf("Exiting free_channel_list function\n");
 }
 
 /* Update functions */
