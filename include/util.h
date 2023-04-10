@@ -39,7 +39,10 @@ void clean_stdin(void);
  */
 char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count);
 
-
+/**
+ * Generate random UUID.
+ * @return a string which is dynamically allocated
+ */
 char* generate_random_uuid_malloc(void);
 
 
