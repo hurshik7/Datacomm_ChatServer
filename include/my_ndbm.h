@@ -9,6 +9,7 @@
 
 
 #define TOKEN_NAME_LENGTH (21)
+#define BIG_TOKEN_NAME_LENGTH (4096)
 #define PSWD_MAX_LENGTH (31)
 #define DSPLY_NAME_LENGTH (21)
 #define UUID_LEN (37)
