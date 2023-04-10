@@ -107,7 +107,8 @@ char* generate_random_uuid_malloc(void)
     return uuid;
 }
 
-bool compare_strings(const char* str1, const char* str2) {
+bool compare_strings(const char* str1, const char* str2)
+{
     int i = 0, j = 0;
     while (str1[i] != '\0' && str2[j] != '\0') {
         if (isspace(str1[i])) {
