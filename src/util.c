@@ -133,7 +133,8 @@ bool compare_strings(const char* str1, const char* str2) {
     return str1[i] == '\0' && str2[j] == '\0';
 }
 
-struct utsname identify_os(void) {
+struct utsname identify_os(void)
+{
     struct utsname unameData;
     int result = uname(&unameData);
 
@@ -145,3 +146,4 @@ struct utsname identify_os(void) {
 
     return unameData;
 }
+
