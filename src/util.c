@@ -138,13 +138,9 @@ struct utsname identify_os(void)
 {
     struct utsname unameData;
     int result = uname(&unameData);
-
-    if (result == 0) {
-        //printf("Server is running on: %s\n", unameData.sysname);
-    } else {
-        //printf("Error getting uname information\n");
+    if (result < 0) {
+        perror("unname()");
     }
-
     return unameData;
 }
 
