@@ -45,7 +45,12 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count);
  */
 char* generate_random_uuid_malloc(void);
 
-
+/**
+ * Compare two strings.
+ * @param str1 a string
+ * @param str2 a string
+ * @return a boolean value
+ */
 bool compare_strings(const char* str1, const char* str2);
 
 /**
