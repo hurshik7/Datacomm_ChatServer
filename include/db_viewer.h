@@ -3,21 +3,35 @@
 
 
 #include "my_ndbm.h"
-#include <ndbm.h>
-#include <netinet/in.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <sys/utsname.h>
 
 
+/**
+ * Prints all user accounts.
+ * @param db a DBM pointer
+ */
 void printAllUserAccounts(DBM *db);
+
+/**
+ * Prints all display names.
+ * @param db a DBM pointer
+ */
 void printAllDisplayNames(DBM *db);
+
+/**
+ * Prints all login information.
+ * @param db a DBM pointer
+ */
 void printAllLoginInfos(DBM *db);
+
+/**
+ * Prints all channels.
+ * @param db a DBM pointer
+ */
 void printAllChannelInfos(DBM *db);
+
+/**
+ * Runs this DB viewer.
+ */
 void run_db_viewer(void);
 
 
