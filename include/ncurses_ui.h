@@ -9,7 +9,6 @@
 
 
 #define TITLE "Chat Server"
-
 #define MENU_HEIGHT (11)
 #define MENU_WIDTH (80)
 #define DB_PATH_BOX_HEIGHT (9)
