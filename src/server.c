@@ -614,7 +614,7 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
         return ERROR_CREATE_CHANNEL_400;
     }
 
-    char* dis_name_in_cache = get_display_name_in_cache_malloc_or_null(clnt_addr);
+    char* dis_name_in_cache = get_display_name_in_cache_malloc_or_null(clnt_addr, display_name);
     if (dis_name_in_cache == NULL) {
         return ERROR_CREATE_CHANNEL_500;
     }
@@ -646,6 +646,7 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
 
     memset(token_out, '\0', TOKEN_NAME_LENGTH);
     strncpy(token_out, channel_name, TOKEN_NAME_LENGTH);
+    strcat(token_out, "\3");
 
     free(dis_name_in_cache);
     free(channel);
@@ -1815,12 +1816,12 @@ void view_active_users(connected_user* cache)
     }
 }
 
-char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH])
+char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH], char* display_name)
 {
     int active_user_count = get_num_connected_users(active_users);
     char* dis_name = NULL;
     for (int i = 0; i < active_user_count; i++) {
-        if (strcmp(active_users[i].ip_address, ip_addr) == 0) {
+        if (strcmp(active_users[i].ip_address, ip_addr) == 0 && strcmp(active_users[i].dsply_name, display_name) == 0) {
             dis_name = (char*) malloc(TOKEN_NAME_LENGTH);
             memset(dis_name, '\0', TOKEN_NAME_LENGTH);
             strncpy(dis_name, active_users[i].dsply_name, TOKEN_NAME_LENGTH);

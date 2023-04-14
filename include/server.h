@@ -127,7 +127,7 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
 connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name);
 connected_user* get_connected_user_by_fd(connected_user* cache, int fd);
 void view_active_users(connected_user* cache);
-char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH]);
+char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH], char* display_name);
 
 
 #endif //CHAT_SERVER_SERVER_H
