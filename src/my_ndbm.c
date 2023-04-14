@@ -284,6 +284,7 @@ bool check_duplicate_channel_name(char* channel_name)
         }
         channel_info_t* k_channel = (channel_info_t*) value.dptr;
         if (strcmp(k_channel->channel_name, channel_name) == 0) {
+            dbm_close(channel_infos);
             return true;
         }
     }
