@@ -83,7 +83,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             break;
         case OBJECT_MESSAGE:
             if (header.version_type.type == TYPE_CREATE) {
-                result = read_and_create_message(fd, token, forward_token, cache);
+                result = read_and_create_message(fd, token, forward_token, cache, header.body_size);
                 send_create_message_response(fd, header, result, token, clnt_addr);
                 channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
                 for (int i = 0; i < get_num_connected_users(cache); i++) {
@@ -110,7 +110,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             // it relates to login(CREATE), logout(DESTROY)
             if (header.version_type.type == TYPE_CREATE) {
                 // TODO add terminate_and_restablish_connection check here
-                result = read_and_login_user(fd, big_token, clnt_addr, cache);
+                result = read_and_login_user(fd, big_token, clnt_addr, cache, header.body_size);
 //                if (result == TERMINATE_AND_RESTABLISH_CONNECTION) {
 //                    int terminate = find_duplicate_user(cache, get_num_connected_users(cache));
 //                    send_logout_user_response(terminate, header, result, token, clnt_addr);
@@ -122,7 +122,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
-                result = read_and_logout_user(fd, token, clnt_addr, cache);
+                result = read_and_logout_user(fd, token, clnt_addr, cache, header.body_size);
                 send_logout_user_response(fd, header, result, token, clnt_addr);
             } else {
                 perror("[SERVER]Error: wrong type");
@@ -339,12 +339,12 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     return ERROR_DESTROY_USER_INVALID_CREDENTIALS;
 }
 
-int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
+int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
-    if (nread <= 0) {
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
         return -1;
     }
@@ -416,6 +416,9 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     if (channel_list == NULL) {
         // Handle error
         perror("No channels currently exist");
+        channel_list = (channel_list_t*) malloc(sizeof(channel_list_t*));
+        channel_list->channel_count = 0;
+        channel_list->channels = NULL;
     }
 
     char* channel_name_list = build_channel_name_list(channel_list->channels, channel_list->channel_count);
@@ -489,12 +492,12 @@ char* build_channel_name_list(channel_info_t** channels, int channel_count)
     return list;
 }
 
-int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache)
+int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
-    if (nread <= 0) {
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
         return -1;
     }
@@ -649,12 +652,12 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     return 0;
 }
 
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache)
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
     memset(buffer, '\0', DEFAULT_BUFFER);
-    ssize_t nread = read(fd, buffer, DEFAULT_BUFFER);
-    if (nread <= 0) {
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
         perror("[SERVER]Error: read body");
         return -1;
     }

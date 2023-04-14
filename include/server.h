@@ -94,9 +94,9 @@ user_login_t* generate_user_login_malloc_or_null(const char* login_token, const 
 user_account_t* generate_user_account_malloc_or_null(const char* uuid, const char* display_name);
 
 /* related to AUTH */
-int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size);
 char* build_channel_name_list(channel_info_t** channels, int channel_count);
-int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache);
+int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size);
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr);
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr);
@@ -112,7 +112,7 @@ int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size);
 int send_update_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr);
 
 /* related to MESSAGE */
-int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache);
+int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache, uint16_t body_size);
 int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
                                                 char* message_body, const uint8_t* timestamp);
