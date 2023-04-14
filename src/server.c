@@ -1149,6 +1149,9 @@ int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
     // TODO ping the changed state
 
     // copy token out
+    if (is_change_name == false) {
+        strncpy(new_channel_name, channel_name, TOKEN_NAME_LENGTH);
+    }
     channel_info_t* updated_channel = get_channel_info_malloc_or_null(new_channel_name);
     if (updated_channel == NULL) {
         return ERROR_UPDATE_CHANNEL_500;
