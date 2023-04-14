@@ -343,7 +343,7 @@ int insert_display_name(char* display_name, char* uuid)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = display_name;
-    key.dsize = strlen(display_name);
+    key.dsize = TOKEN_NAME_LENGTH;
     value.dptr = uuid;
     value.dsize = UUID_LEN;
 
