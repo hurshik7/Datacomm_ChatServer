@@ -15,7 +15,7 @@
 #define UUID_LEN (37)
 #define CLNT_IP_ADDR_LENGTH (16)
 #define DEFAULT_LIST_SIZE (64)
-#define TIMESTAMP_SIZE (8)
+#define TIMESTAMP_SIZE (32)
 #define MAX_MESSAGE_SIZE (974)
 
 
@@ -97,6 +97,9 @@ void free_channel_list(channel_list_t* channel_list);
 int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity);
 int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE][TOKEN_NAME_LENGTH]);
 
+/* Init server functions */
+int create_admin(void);
+int create_global_channel(void);
 
 #endif /* MY_NDBM_H */
 

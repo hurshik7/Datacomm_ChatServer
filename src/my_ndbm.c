@@ -1,9 +1,12 @@
 #include "my_ndbm.h"
+#include "util.h"
+#include "server.h"
 #include <fcntl.h>
 #include <limits.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 // replace print(), perror() with printw() + refresh()
@@ -162,7 +165,7 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
-        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
         return NULL;
     }
 
@@ -189,7 +192,6 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 
 channel_list_t* get_all_channels(void)
 {
-//    printf("Entering get_all_channels function\n");
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
         //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
@@ -235,7 +237,6 @@ channel_list_t* get_all_channels(void)
     }
 
     dbm_close(channel_infos);
-//    printf("Exiting get_all_channels function\n");
     return channel_list;
 }
 
@@ -514,7 +515,6 @@ int remove_user_login(char* login_token)
 
 void free_channel_list(channel_list_t* channel_list)
 {
-//    printf("Entering free_channel_list function\n");
     if (channel_list != NULL) {
         for (int i = 0; i < channel_list->channel_count; i++) {
             free(channel_list->channels[i]);
@@ -522,7 +522,6 @@ void free_channel_list(channel_list_t* channel_list)
         free(channel_list->channels);
         free(channel_list);
     }
-//    printf("Exiting free_channel_list function\n");
 }
 
 /* Update functions */
@@ -599,5 +598,70 @@ int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE
 
     dbm_close(channel_info_db);
     free(fetched_channel);
+    return 0;
+}
+
+/* Init server functions */
+int create_admin(void)
+{
+    const char* uuid = "00000000-0000-0000-0000-000000000000";
+    char *uuid_string = malloc(UUID_LEN);
+    strncpy(uuid_string, uuid, UUID_LEN + 1);
+    char admin_name[TOKEN_NAME_LENGTH] = "admin";
+
+    bool is_display_name_duplicates = check_duplicate_display_name(admin_name);
+    if (is_display_name_duplicates == true) {
+        return -1;
+    }
+
+    // create admin credentials
+    user_login_t admin_login = {"admin", "admin", "admin"};
+    user_account_t* admin_account = generate_user_account_malloc_or_null(uuid, "admin");
+
+    int display_name_result = insert_display_name(admin_name, uuid_string);
+
+    if (display_name_result != 0) {
+        perror("[DB]Error: Failed to create admin_display_name");
+    }
+
+    int login_result = insert_user_login(&admin_login);
+
+    if (login_result != 0) {
+        perror("[DB]Error: Failed to create admin_login");
+    }
+
+    int account_result = insert_user_account(admin_account);
+
+    if (account_result != 0) {
+        perror("[DB]Error: Failed to create admin_account");
+    }
+
+    assert(account_result == 0 && login_result == 0 && display_name_result == 0);
+
+    free(admin_account);
+    return 0;
+}
+
+int create_global_channel(void)
+{
+    channel_info_t* channel = create_channel_or_null_malloc("global", "admin", 0);
+
+    if (channel == NULL) {
+        perror("Failed to create global channel");
+        return -1;
+    }
+
+    assert(channel != NULL);
+
+    int result = insert_channel_info(channel);
+
+    if (result != 0) {
+        perror("Failed to insert global channel to db");
+        return -1;
+    }
+
+    assert(result == 0);
+
+    free(channel);
     return 0;
 }
