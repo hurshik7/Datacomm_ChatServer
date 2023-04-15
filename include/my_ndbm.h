@@ -17,6 +17,7 @@
 #define DEFAULT_LIST_SIZE (64)
 #define TIMESTAMP_SIZE (32)
 #define MAX_MESSAGE_SIZE (974)
+#define MSG_HISTORY_MAX (100)
 
 
 #define DB_LOGIN_INFO "user_login_info"
