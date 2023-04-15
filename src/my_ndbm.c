@@ -614,10 +614,15 @@ int create_admin(void)
         return -1;
     }
 
-    // create admin account
+    // create admin credentials
     user_login_t admin_login = {"admin", "admin", "admin"};
     user_account_t* admin_account = generate_user_account_malloc_or_null(uuid, "admin");
-    insert_display_name(admin_name, uuid_string);
+
+    int display_name_result = insert_display_name(admin_name, uuid_string);
+
+    if (display_name_result != 0) {
+        perror("[DB]Error: Failed to create admin_display_name");
+    }
 
     int login_result = insert_user_login(&admin_login);
 
@@ -631,7 +636,7 @@ int create_admin(void)
         perror("[DB]Error: Failed to create admin_account");
     }
 
-    assert(account_result == 0 && login_result == 0);
+    assert(account_result == 0 && login_result == 0 && display_name_result == 0);
 
     free(admin_account);
     return 0;
