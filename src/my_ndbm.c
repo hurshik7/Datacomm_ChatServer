@@ -646,6 +646,12 @@ int create_global_channel(void)
 {
     channel_info_t* channel = create_channel_or_null_malloc("global", "admin", 0);
 
+    if (check_duplicate_channel_name("global") == true) {
+        return -1;
+    }
+
+    check_duplicate_channel_name("global");
+
     if (channel == NULL) {
         perror("Failed to create global channel");
         return -1;
