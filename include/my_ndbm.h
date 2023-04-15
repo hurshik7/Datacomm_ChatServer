@@ -98,6 +98,7 @@ int remove_user_account(char* user_id);
 int remove_display_name(char* display_name);
 int remove_user_login(char* login_token);
 void free_channel_list(channel_list_t* channel_list);
+void free_message_list(message_list_t* message_list);
 
 /* Update functions */
 int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity);
