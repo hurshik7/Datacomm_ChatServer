@@ -77,7 +77,7 @@ channel_list_t* get_all_channels(void);
 
 /* Check functions */
 bool check_duplicate_display_name(char* display_name);
-bool check_duplicate_channel_name(char* channel_name);
+bool check_duplicate_channel_name(const char* channel_name);
 bool check_if_user_in_channel(const char* display_name, const channel_info_t* channel);
 
 /* Insert functions */

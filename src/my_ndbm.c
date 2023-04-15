@@ -1,5 +1,4 @@
 #include "my_ndbm.h"
-#include "util.h"
 #include "server.h"
 #include <fcntl.h>
 #include <limits.h>
@@ -266,7 +265,7 @@ bool check_duplicate_display_name(char* display_name)
     return true;
 }
 
-bool check_duplicate_channel_name(char* channel_name)
+bool check_duplicate_channel_name(const char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
