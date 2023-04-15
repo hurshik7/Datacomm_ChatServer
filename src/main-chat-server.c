@@ -3,6 +3,7 @@
 #include "option_handler.h"
 #include "server.h"
 #include "util.h"
+#include "my_ndbm.h"
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -189,6 +190,10 @@ int run_server(struct options* opts)
 //    fprintf(stdout, "Listening on port %d\n", opts->port_in);
     printw("Listening on port %d\n", opts->port_in);
     refresh();
+
+    // Create admin account after successful server initialization
+    create_admin();
+
     while (server_running) {
         // Call poll() to wait for events on the file descriptors
         int num_fds = MAX_CLIENTS;
