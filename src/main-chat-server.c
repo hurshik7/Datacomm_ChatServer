@@ -194,6 +194,9 @@ int run_server(struct options* opts)
     // Create admin account after successful server initialization
     create_admin();
 
+    // Create global channel
+    create_global_channel();
+
     while (server_running) {
         // Call poll() to wait for events on the file descriptors
         int num_fds = MAX_CLIENTS;
