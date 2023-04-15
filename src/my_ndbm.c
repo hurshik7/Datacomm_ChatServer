@@ -1,5 +1,4 @@
 #include "my_ndbm.h"
-#include "util.h"
 #include "server.h"
 #include <fcntl.h>
 #include <limits.h>
@@ -238,6 +237,56 @@ channel_list_t* get_all_channels(void)
 
     dbm_close(channel_infos);
     return channel_list;
+}
+
+message_list_t* get_all_messages(void)
+{
+    DBM* message_infos = open_db_or_null(DB_MESSAGE_INFO_PATH, O_RDONLY | O_SYNC);
+    if (message_infos == NULL) {
+        //perror("[DB]Error: Failed to open DB_MESSAGE_INFO DB");
+        return NULL;
+    }
+
+    // Allocate memory for the message_list_t struct
+    message_list_t * message_list = malloc(sizeof(message_list_t));
+    if (message_list == NULL) {
+        dbm_close(message_infos);
+        return NULL;
+    }
+    message_list->message_count = 0;
+    message_list->messages = NULL;
+
+    datum key, value;
+    // Iterate through all keys and values
+    for (key = dbm_firstkey(message_infos); key.dptr != NULL; key = dbm_nextkey(message_infos)) {
+        value = dbm_fetch(message_infos, key);
+        if (value.dptr == NULL) {
+            perror("dbm_fetch");
+            dbm_close(message_infos);
+            free(message_list);
+            return NULL;
+        }
+        message_info_t* k_message = (message_info_t*) value.dptr;
+
+        // Reallocate memory for the messages array
+        message_info_t** temp_messages = realloc(message_list->messages, (message_list->message_count + 1) * sizeof(message_info_t*));
+        if (temp_messages == NULL) {
+            perror("realloc");
+            dbm_close(message_infos);
+            free_message_list(message_list);
+            return NULL;
+        }
+        message_list->messages = temp_messages;
+
+        // Allocate memory for the new message_info_t and copy the data
+        message_list->messages[message_list->message_count] = malloc(sizeof(message_info_t));
+        memcpy(message_list->messages[message_list->message_count], k_message, sizeof(message_info_t));
+
+        message_list->message_count++;
+    }
+
+    dbm_close(message_infos);
+    return message_list;
 }
 
 /* Check duplicates functions */
@@ -521,6 +570,17 @@ void free_channel_list(channel_list_t* channel_list)
         }
         free(channel_list->channels);
         free(channel_list);
+    }
+}
+
+void free_message_list(message_list_t* message_list)
+{
+    if (message_list != NULL) {
+        for (int i = 0; i < message_list->message_count; i++) {
+            free(message_list->messages[i]);
+        }
+        free(message_list->messages);
+        free(message_list);
     }
 }
 
