@@ -1,9 +1,12 @@
 #include "my_ndbm.h"
+#include "util.h"
+#include "server.h"
 #include <fcntl.h>
 #include <limits.h>
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 // replace print(), perror() with printw() + refresh()
@@ -595,5 +598,41 @@ int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE
 
     dbm_close(channel_info_db);
     free(fetched_channel);
+    return 0;
+}
+
+/* Init server functions */
+int create_admin(void)
+{
+    const char* uuid = "00000000-0000-0000-0000-000000000000";
+    char *uuid_string = malloc(UUID_LEN);
+    strncpy(uuid_string, uuid, UUID_LEN + 1);
+    char admin_name[TOKEN_NAME_LENGTH] = "admin";
+
+    bool is_display_name_duplicates = check_duplicate_display_name(admin_name);
+    if (is_display_name_duplicates == true) {
+        return -1;
+    }
+
+    // create admin account
+    user_login_t admin_login = {"admin", "admin", "admin"};
+    user_account_t* admin_account = generate_user_account_malloc_or_null(uuid, "admin");
+    insert_display_name(admin_name, uuid_string);
+
+    int login_result = insert_user_login(&admin_login);
+
+    if (login_result != 0) {
+        perror("[DB]Error: Failed to create admin_login");
+    }
+
+    int account_result = insert_user_account(admin_account);
+
+    if (account_result != 0) {
+        perror("[DB]Error: Failed to create admin_account");
+    }
+
+    assert(account_result == 0 && login_result == 0);
+
+    free(admin_account);
     return 0;
 }
