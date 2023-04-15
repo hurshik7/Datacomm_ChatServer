@@ -644,17 +644,20 @@ int create_admin(void)
 
 int create_global_channel(void)
 {
+    // create global channel object
     channel_info_t* channel = create_channel_or_null_malloc("global", "admin", 0);
 
-    if (channel == NULL) {
-        perror("Failed to create global channel");
+    // check if global channel already exists in database
+    if (check_duplicate_channel_name("global") == true) {
         return -1;
     }
 
     assert(channel != NULL);
 
+    // insert global channel into database
     int result = insert_channel_info(channel);
 
+    // terminate if insertion fails
     if (result != 0) {
         perror("Failed to insert global channel to db");
         return -1;
