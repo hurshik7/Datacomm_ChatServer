@@ -641,3 +641,27 @@ int create_admin(void)
     free(admin_account);
     return 0;
 }
+
+int create_global_channel(void)
+{
+    channel_info_t* channel = create_channel_or_null_malloc("global", "admin", 0);
+
+    if (channel == NULL) {
+        perror("Failed to create global channel");
+        return -1;
+    }
+
+    assert(channel != NULL);
+
+    int result = insert_channel_info(channel);
+
+    if (result != 0) {
+        perror("Failed to insert global channel to db");
+        return -1;
+    }
+
+    assert(result == 0);
+
+    free(channel);
+    return 0;
+}
