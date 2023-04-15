@@ -162,7 +162,7 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 {
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
-        //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
+        perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
         return NULL;
     }
 
@@ -189,7 +189,6 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
 
 channel_list_t* get_all_channels(void)
 {
-//    printf("Entering get_all_channels function\n");
     DBM* channel_infos = open_db_or_null(DB_CHANNEL_INFO_PATH, O_RDONLY | O_SYNC);
     if (channel_infos == NULL) {
         //perror("[DB]Error: Failed to open DB_CHANNEL_INFO DB");
@@ -235,7 +234,6 @@ channel_list_t* get_all_channels(void)
     }
 
     dbm_close(channel_infos);
-//    printf("Exiting get_all_channels function\n");
     return channel_list;
 }
 
@@ -514,7 +512,6 @@ int remove_user_login(char* login_token)
 
 void free_channel_list(channel_list_t* channel_list)
 {
-//    printf("Entering free_channel_list function\n");
     if (channel_list != NULL) {
         for (int i = 0; i < channel_list->channel_count; i++) {
             free(channel_list->channels[i]);
@@ -522,7 +519,6 @@ void free_channel_list(channel_list_t* channel_list)
         free(channel_list->channels);
         free(channel_list);
     }
-//    printf("Exiting free_channel_list function\n");
 }
 
 /* Update functions */
