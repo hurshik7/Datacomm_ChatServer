@@ -64,6 +64,10 @@ typedef struct {
     int channel_count;
 } channel_list_t;
 
+typedef struct {
+    message_info_t** messages;
+    int message_count;
+} message_list_t;
 
 /* open DB */
 DBM* open_db_or_null(const char* db_name, int flag);
