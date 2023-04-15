@@ -79,6 +79,7 @@ char* get_uuid_with_display_name_or_null(char* display_name);
 message_info_t* get_message_malloc_or_null(char* user_token);
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
 channel_list_t* get_all_channels(void);
+message_list_t* get_all_messages(void);
 
 /* Check functions */
 bool check_duplicate_display_name(char* display_name);
