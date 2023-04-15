@@ -116,6 +116,8 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
 int send_create_message_response(int fd, chat_header_t, int result, const char* token, const char* clnt_addr);
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
                                                 char* message_body, const uint8_t* timestamp);
+int read_and_read_message(int fd, char* message_info_out, uint16_t body_size);
+char* build_message_list(message_info_t** messages, int message_count, char* channel_name);
 
 /* related to Cache, Util */
 int get_num_connected_users(connected_user* cache);

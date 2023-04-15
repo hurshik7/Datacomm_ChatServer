@@ -405,7 +405,6 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
         insert_user_account(user_account);
     }
 
-    // TODO WORKING ON THIS
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
     strncpy(display_name, user_account->display_name, TOKEN_NAME_LENGTH);
 
@@ -441,6 +440,8 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     } else {
         insert_user_in_cache(fd, cache, user_account, login_info, get_num_connected_users(cache));
     }
+
+    // add user to global channel
 
     free(user_account);
     free(login_info);
@@ -870,6 +871,119 @@ int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
 
     free(channel_info);
     return 0;
+}
+
+int read_and_read_message(int fd, char* message_info_out, uint16_t body_size)
+{
+    // TODO CURRENT CURRENT
+    char buffer[DEFAULT_BUFFER];
+    memset(buffer, '\0', DEFAULT_BUFFER);
+    ssize_t nread = read(fd, buffer, body_size);
+    if (nread <= 0 || nread != body_size) {
+        perror("[SERVER]Error: read body");
+    }
+
+    // log
+    printw("[Body]nread: %d, body: %s\n", nread, buffer);
+    refresh();
+
+    char channel_name[TOKEN_NAME_LENGTH] = { '\0', };
+    char num_of_messages[TOKEN_NAME_LENGTH] = { '\0', };
+
+    char* token = strtok(buffer, "\3");
+    strncpy(channel_name, token, strlen(token)); // channel-name
+    token = strtok(NULL, "\3");
+    strncpy(num_of_messages, token, strlen(token)); // num-of-msgs
+
+    bool input_is_num = false;
+
+    if (is_number(num_of_messages) == true) {
+        input_is_num = true;
+    } else {
+        return -1;
+    }
+
+    assert(input_is_num == true);
+
+    bool is_valid_fields = false;
+
+    if (channel_name[0] != '\0' && num_of_messages[0] != '\0' && token != NULL) {
+        is_valid_fields = true;
+    } else {
+        return -1;
+    }
+
+    assert(is_valid_fields);
+
+    // Get all messages
+    message_list_t* message_list = get_all_messages();
+    if (message_list == NULL) {
+        // Handle error
+        perror("No channels currently exist");
+        message_list = (message_list_t*) malloc(sizeof(message_list_t*));
+        message_list->message_count = 0;
+        message_list->messages = NULL;
+    }
+
+    char* message_name_list = build_message_list(message_list->messages, message_list->message_count, channel_name);
+
+    // Construct the response body
+    char* response_body;
+    response_body = (char*) malloc(MAX_MSG_HISTORY_RES * sizeof(char));
+    snprintf(response_body, MAX_MSG_HISTORY_RES, "%s%d%d%c%s", channel_name, '\3', message_list->message_count, '\3', message_name_list);
+
+    // Send the response body
+    strncpy(message_info_out, response_body, MAX_MSG_HISTORY_RES);
+
+    free_message_list(message_list);
+    return 0;
+}
+
+char* build_message_list(message_info_t** messages, int message_count, char* channel_name)
+{
+    char* list = NULL;
+    size_t size = 0;
+
+    channel_info_t* req_channel = get_channel_info_malloc_or_null(channel_name);
+
+    for (int i = 0; i < message_count; i++) {
+        if (strcmp(req_channel->channel_id, messages[i]->channel_id) == 0) {
+            size += strlen(messages[i]->message_content) + 1; // +1 for ETX
+        }
+    }
+    size++; // +1 for the final null terminator
+    list = malloc(size);
+    if (list == NULL) {
+        return NULL;
+    }
+
+    size_t offset = 0;
+    for (int i = 0; i < message_count; i++) {
+        if (strcmp(req_channel->channel_id, messages[i]->channel_id) == 0) {
+            // copy message sender display name
+            user_account_t* msg_sender = get_user_account_malloc_or_null(messages[i]->user_id);
+
+            strcpy(list + offset, msg_sender->display_name);
+            offset += strlen(msg_sender->display_name);
+            list[offset++] = '\3';
+
+            // copy message content
+            strcpy(list + offset, messages[i]->message_content);
+            offset += strlen(messages[i]->message_content);
+            list[offset++] = '\3';
+
+            // copy timestamp
+            strcpy(list + offset, (const char*)messages[i]->time_stamp);
+            offset += strlen((const char*)messages[i]->time_stamp);
+            list[offset++] = '\3';
+
+            free(msg_sender);
+        }
+    }
+    list[offset] = '\0';
+
+    free(req_channel);
+    return list;
 }
 
 int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
