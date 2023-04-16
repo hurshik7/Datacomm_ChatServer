@@ -73,7 +73,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
 
 user_account_t* get_user_account_malloc_or_null(char* user_uuid)
 {
-    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT_PATH, O_RDONLY | O_SYNC);
+    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT_PATH, O_RDONLY);
     if (user_acc_db == NULL) {
         return NULL;
     }
