@@ -17,6 +17,7 @@
 #define DEFAULT_LIST_SIZE (64)
 #define TIMESTAMP_SIZE (32)
 #define MAX_MESSAGE_SIZE (974)
+#define MAX_MSG_HISTORY_RES (8192)
 
 
 #define DB_LOGIN_INFO "user_login_info"
@@ -63,6 +64,10 @@ typedef struct {
     int channel_count;
 } channel_list_t;
 
+typedef struct {
+    message_info_t** messages;
+    int message_count;
+} message_list_t;
 
 /* open DB */
 DBM* open_db_or_null(const char* db_name, int flag);
@@ -74,6 +79,7 @@ char* get_uuid_with_display_name_or_null(char* display_name);
 message_info_t* get_message_malloc_or_null(char* user_token);
 channel_info_t* get_channel_info_malloc_or_null(char* channel_name);
 channel_list_t* get_all_channels(void);
+message_list_t* get_all_messages(void);
 
 /* Check functions */
 bool check_duplicate_display_name(char* display_name);
@@ -92,6 +98,7 @@ int remove_user_account(char* user_id);
 int remove_display_name(char* display_name);
 int remove_user_login(char* login_token);
 void free_channel_list(channel_list_t* channel_list);
+void free_message_list(message_list_t* message_list);
 
 /* Update functions */
 int update_channel_name_and_publicity(char* channel_name, char* new_channel_name, bool new_publicity);

@@ -59,5 +59,11 @@ bool compare_strings(const char* str1, const char* str2);
  */
 struct utsname identify_os(void);
 
+/**
+ * Check if user input is a number.
+ * @param str input string
+ * @return true if input is a number else false
+ */
+bool is_number(const char *str);
 
 #endif /* CHAT_SERVER_UTIL_H */
