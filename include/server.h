@@ -119,7 +119,7 @@ message_info_t* generate_message_malloc_or_null(char* display_name, channel_info
                                                 char* message_body, const uint8_t* timestamp);
 int read_and_read_message(int fd, char* message_info_out, uint16_t body_size);
 char* build_message_list(message_info_t** messages, int message_count, char* channel_name);
-int send_read_message_response(int fd, chat_header_t header, int result, const char* message_info_token, const char* clnt_addr);
+int send_read_message_response(int fd, chat_header_t header, int result, char* message_info_token, const char* clnt_addr);
 
 /* related to Cache, Util */
 int get_num_connected_users(connected_user* cache);

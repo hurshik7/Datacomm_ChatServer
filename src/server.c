@@ -98,7 +98,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
                 }
             } else if (header.version_type.type == TYPE_READ) {
                 result = read_and_read_message(fd, xl_token, header.body_size);
-                send_read_message_response(fd, header, result, token, clnt_addr);
+                send_read_message_response(fd, header, result, xl_token, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -922,7 +922,7 @@ int read_and_read_message(int fd, char* message_info_out, uint16_t body_size)
     if (message_list == NULL) {
         // Handle error
         perror("No messages currently exist");
-        message_list = (message_list_t*) malloc(sizeof(message_list_t*));
+        message_list = (message_list_t*) malloc(sizeof(message_list_t));
         message_list->message_count = 0;
         message_list->messages = NULL;
     }
@@ -931,18 +931,18 @@ int read_and_read_message(int fd, char* message_info_out, uint16_t body_size)
 
     // Construct the response body
     char* response_body;
-    response_body = (char*) malloc(MAX_MSG_HISTORY_RES * sizeof(char));
-    snprintf(response_body, MAX_MSG_HISTORY_RES, "%s%d%d%c%s", channel_name, '\3', message_list->message_count, '\3', message_name_list);
+    response_body = malloc(BIG_TOKEN_NAME_LENGTH);
+    snprintf(response_body, BIG_TOKEN_NAME_LENGTH, "%s%c%d%c%s", channel_name, '\3', message_list->message_count, '\3', message_name_list);
 
     // Send the response body
-    strncpy(message_info_out, response_body, MAX_MSG_HISTORY_RES);
+    strncpy(message_info_out, response_body, MAX_MSG_HISTORY_RES + sizeof((char*)response_body));
 
-    free_message_list(message_list);
     return 0;
 }
 
 char* build_message_list(message_info_t** messages, int message_count, char* channel_name)
 {
+
     char* list = NULL;
     size_t size = 0;
 
@@ -951,6 +951,7 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
     for (int i = 0; i < message_count; i++) {
         if (strcmp(req_channel->channel_id, messages[i]->channel_id) == 0) {
             size += strlen(messages[i]->message_content) + 1; // +1 for ETX
+            size += TIMESTAMP_SIZE; // Add the fixed length of the timestamp
         }
     }
     size++; // +1 for the final null terminator
@@ -963,24 +964,29 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
     for (int i = 0; i < message_count; i++) {
         if (strcmp(req_channel->channel_id, messages[i]->channel_id) == 0) {
             // copy message sender display name
-            // TODO BIG TITTIES
             user_account_t* msg_sender = get_user_account_malloc_or_null(messages[i]->user_id);
 
-            strcpy(list + offset, msg_sender->display_name);
-            offset += strlen(msg_sender->display_name);
+            size_t display_name_length = strlen(msg_sender->display_name);
+            size_t message_content_length = strlen(messages[i]->message_content);
+
+            if (offset + display_name_length + message_content_length + TIMESTAMP_SIZE + 3 >= size) {
+                break;
+            }
+
+            memcpy(list + offset, msg_sender->display_name, display_name_length);
+            offset += display_name_length;
             list[offset++] = '\3';
 
             // copy message content
-            strcpy(list + offset, messages[i]->message_content);
-            offset += strlen(messages[i]->message_content);
+            memcpy(list + offset, messages[i]->message_content, message_content_length);
+            offset += message_content_length;
             list[offset++] = '\3';
 
             // copy timestamp
-            strcpy(list + offset, (const char*)messages[i]->time_stamp);
-            offset += strlen((const char*)messages[i]->time_stamp);
+            memcpy(list + offset, messages[i]->time_stamp, TIMESTAMP_SIZE);
+            offset += TIMESTAMP_SIZE;
             list[offset++] = '\3';
 
-            free(msg_sender);
         }
     }
     list[offset] = '\0';
@@ -989,11 +995,11 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
     return list;
 }
 
-int send_read_message_response(int fd, chat_header_t header, int result, const char* message_info_token, const char* clnt_addr)
+int send_read_message_response(int fd, chat_header_t header, int result, char* message_info_token, const char* clnt_addr)
 {
-    char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
+    char body[MAX_MSG_HISTORY_RES + 200] = {'\0', };
     if (result == 0) {
-        strcpy(body, "200\3\0");
+        strcpy(body, "200\3");
         strcat(body, message_info_token);
     } else {
         sprintf(body, "%d\3", result);

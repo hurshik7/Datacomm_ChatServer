@@ -248,7 +248,7 @@ message_list_t* get_all_messages(void)
     }
 
     // Allocate memory for the message_list_t struct
-    message_list_t * message_list = malloc(sizeof(message_list_t));
+    message_list_t* message_list = malloc(sizeof(message_list_t));
     if (message_list == NULL) {
         dbm_close(message_infos);
         return NULL;
@@ -266,7 +266,9 @@ message_list_t* get_all_messages(void)
             free(message_list);
             return NULL;
         }
-        message_info_t* k_message = (message_info_t*) value.dptr;
+
+        message_info_t* k_message = malloc(sizeof(message_info_t));
+        memcpy(k_message, value.dptr, sizeof(message_info_t));
 
         // Reallocate memory for the messages array
         message_info_t** temp_messages = realloc(message_list->messages, (message_list->message_count + 1) * sizeof(message_info_t*));
@@ -283,6 +285,8 @@ message_list_t* get_all_messages(void)
         memcpy(message_list->messages[message_list->message_count], k_message, sizeof(message_info_t));
 
         message_list->message_count++;
+
+        free(k_message);
     }
 
     dbm_close(message_infos);
