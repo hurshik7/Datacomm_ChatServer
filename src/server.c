@@ -40,6 +40,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     // do server base on request, read body if it needs to
     char token[TOKEN_NAME_LENGTH] = { '\0', };
     char big_token[BIG_TOKEN_NAME_LENGTH] = { '\0', };
+    char xl_token[MAX_MSG_HISTORY_RES] = { '\0', };
     char forward_token[DEFAULT_BUFFER];
     switch (header.object) {
         case OBJECT_USER:
@@ -96,7 +97,8 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
                     }
                 }
             } else if (header.version_type.type == TYPE_READ) {
-
+                result = read_and_read_message(fd, xl_token, header.body_size);
+                send_read_message_response(fd, header, result, token, clnt_addr);
             } else if (header.version_type.type == TYPE_UPDATE) {
 
             } else if (header.version_type.type == TYPE_DESTROY) {
@@ -919,7 +921,7 @@ int read_and_read_message(int fd, char* message_info_out, uint16_t body_size)
     message_list_t* message_list = get_all_messages();
     if (message_list == NULL) {
         // Handle error
-        perror("No channels currently exist");
+        perror("No messages currently exist");
         message_list = (message_list_t*) malloc(sizeof(message_list_t*));
         message_list->message_count = 0;
         message_list->messages = NULL;
@@ -961,6 +963,7 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
     for (int i = 0; i < message_count; i++) {
         if (strcmp(req_channel->channel_id, messages[i]->channel_id) == 0) {
             // copy message sender display name
+            // TODO BIG TITTIES
             user_account_t* msg_sender = get_user_account_malloc_or_null(messages[i]->user_id);
 
             strcpy(list + offset, msg_sender->display_name);
@@ -984,6 +987,40 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
 
     free(req_channel);
     return list;
+}
+
+int send_read_message_response(int fd, chat_header_t header, int result, const char* message_info_token, const char* clnt_addr)
+{
+    char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
+    if (result == 0) {
+        strcpy(body, "200\3\0");
+        strcat(body, message_info_token);
+    } else {
+        sprintf(body, "%d\3", result);
+        if (result == ERROR_READ_MESSAGE_206) {
+            strcat(body, "Invalid request\3");
+        } else {
+            printw("the result of read_and_read_channel is wrong\n");
+            refresh();
+            return -1;
+        }
+    }
+
+    uint16_t body_size = strlen(body);
+    header.body_size = body_size;
+    uint32_t header_int = create_response_header(&header);
+
+    if (write(fd, &header_int, sizeof(uint32_t)) < 0) {
+        perror("send header (send_read_message_response)");
+        return -1;
+    }
+    if (write(fd, body, body_size) < 0) {
+        perror("send body (send_read_message_response)");
+        return -1;
+    }
+    printw("Success to send the res to %s/res-body:%s\n", clnt_addr, body);
+    refresh();
+    return 0;
 }
 
 int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
@@ -1389,12 +1426,12 @@ message_info_t* generate_message_malloc_or_null(char* display_name, channel_info
 
     size_t message_body_length = strlen(message_body);
 
-    user_login_t* userLogin = get_login_info_malloc_or_null(display_name);
+    user_login_t* user_login = get_login_info_malloc_or_null(display_name);
 
     // TODO TIMESTAMP ISSUE
     memset(message, 0, sizeof(user_account_t));
     strncpy(message->message_id, message_uuid, UUID_LEN);
-    strncpy(message->user_id, userLogin->uuid, TOKEN_NAME_LENGTH);
+    strncpy(message->user_id, user_login->uuid, UUID_LEN);
     strncpy(message->channel_id, channel->channel_id, UUID_LEN);
     strncpy(message->message_content, message_body, sizeof(message_body_length));
     for (size_t i = 0; i < TIMESTAMP_SIZE; ++i) {

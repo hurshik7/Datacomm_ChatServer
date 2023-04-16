@@ -17,7 +17,6 @@
 #define DEFAULT_LIST_SIZE (64)
 #define TIMESTAMP_SIZE (32)
 #define MAX_MESSAGE_SIZE (974)
-#define MSG_HISTORY_MAX (100)
 #define MAX_MSG_HISTORY_RES (8192)
 
 
