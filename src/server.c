@@ -529,22 +529,20 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     refresh();
 
     char display_name[DSPLY_NAME_LENGTH] = { '\0', };
-    char* token = strtok(buffer, "\3"); // login_token
+    char* token = strtok(buffer, "\3"); // display_name
     strncpy(display_name, token, strlen(token));
 
     bool is_token_duplicate = false;
-    user_login_t* login_info = get_login_info_malloc_or_null(display_name);
 
-    char* clnt_uuid = malloc(UUID_LEN);
-    strncpy(clnt_uuid, login_info->uuid, UUID_LEN);
-    clnt_uuid[strlen(clnt_uuid)] = '\0';
-
-    user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
+    // get uuid with the display name
+    char* uuid_of_user = get_uuid_with_display_name_or_null(display_name);
+    // get user account with the uuid
+    user_account_t* user_account = get_user_account_malloc_or_null(uuid_of_user);
 
     // TODO PROBLEM HERE
     switch (user_account->privilege_level) {
         case 0:
-            if (login_info != NULL) {
+            if (uuid_of_user != NULL) {
                 // user exists in db
                 is_token_duplicate = true;
             } else {
@@ -557,7 +555,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
                 goto error_exit_mismatch_address;
             }
         case 1:
-            if (login_info != NULL) {
+            if (uuid_of_user != NULL) {
                 // user exists in db
                 is_token_duplicate = true;
             } else {
@@ -572,7 +570,7 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     }
 
     assert(is_token_duplicate == true && user_account->online_status == 1);
-    assert(login_info != NULL);
+    assert(uuid_of_user != NULL);
 
     if (user_account != NULL) {
         logout_user_account_malloc_or_null(user_account);
@@ -584,20 +582,19 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     remove_user_in_cache(cache, user_account, get_num_connected_users(cache));
 
     free(user_account);
-    free(login_info);
-    free(clnt_uuid);
+    free(uuid_of_user);
     return 0;
     error_exist_invalid_fields:
-    free(login_info);
+    free(uuid_of_user);
     return ERROR_LOGOUT_INVALID_FIELDS;
     error_exit_mismatch_address:
-    free(login_info);
+    free(uuid_of_user);
     return ERROR_LOGOUT_USER_MISMATCH_ADDRESS;
     error_exit_admin_user_not_exist:
-    free(login_info);
+    free(uuid_of_user);
     return ERROR_LOGOUT_ADMIN_USER_NOT_EXIST;
     error_exit_admin_user_not_online:
-    free(login_info);
+    free(uuid_of_user);
     return ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE;
 }
 
@@ -742,9 +739,9 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
     connected_user* user_in_cache = get_connected_user_by_display_name(cache, display_name);
 
     // store uuid and remove extra char at end of uuid string
-    char* clnt_uuid = malloc(UUID_LEN);
+    char* clnt_uuid = (char*) malloc(UUID_LEN);
+    memset(clnt_uuid, '\0', UUID_LEN);
     strncpy(clnt_uuid, user_in_cache->uuid, UUID_LEN);
-    clnt_uuid[strlen(clnt_uuid)] = '\0';
 
     user_account_t* user_account = get_user_account_malloc_or_null(clnt_uuid);
 
