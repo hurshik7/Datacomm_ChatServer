@@ -61,7 +61,8 @@ int main(void) {
                      "[6] - CREATE_MESSAGE\n"
                      "[7] - DESTROY_USER\n"
                      "[8] - READ_CHANNEL\n"
-                     "[9] - UPDATE_CHANNEL\n");
+                     "[9] - UPDATE_CHANNEL\n"
+                     "[A] - READ_MESSAGE\n");
         scanf("%c", &choice);
 
         if (choice == '0') {
@@ -431,12 +432,57 @@ int main(void) {
 
             char body[1024] = {'\0'};
             sprintf(body, "comp4981 channel\3");
-            strcat(body, "1\3"); // change channel name?
-            strcat(body, "edited channel\3"); // new channel name
+            strcat(body, "0\3"); // change channel name?
             strcat(body, "0\3"); // don't want to get the banned list
-            strcat(body, "0\3"); // alter users?
+            strcat(body, "1\3"); // alter users?
+            strcat(body, "1\3user\3"); // new channel name
             strcat(body, "0\3"); // alter admins?
             strcat(body, "0\3"); // alter banned?
+            test_header.body_size = (uint16_t) strlen(body);
+            uint16_t body_size = test_header.body_size;
+            test_header.body_size = htons(test_header.body_size);
+
+            uint32_t temp_int = 0;
+            memcpy(&temp_int, &test_header, sizeof(test_header));
+
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
+
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
+
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(uint32_t)) < 0) {
+                perror("read");
+            }
+            uint32_t h = 0;
+            memcpy(&h, buffer, sizeof(uint32_t));
+            h = ntohl(h);
+            chat_header_t temp_header;
+            memcpy(&temp_header, &h, sizeof(uint32_t));
+
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, temp_header.body_size) < 0) {
+                perror("recv");
+            }
+            printf("res-body: %s\n", buffer);
+        } else if (choice == 'A') {
+            // READ MESSAGE
+
+            chat_header_t test_header;
+            memset(&test_header, 0, sizeof(chat_header_t));
+            test_header.version_type.version = 1;
+            test_header.version_type.type = 2;
+            test_header.object = 3;
+            // for testing read_header
+            printf("version: %d\n", test_header.version_type.version);
+            printf("type: %d\n", test_header.version_type.type);
+            printf("object: %d\n", test_header.object);
+
+            char body[1024] = {'\0'};
+            sprintf(body, "comp4981 channel\3%d\3", 10);
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
             test_header.body_size = htons(test_header.body_size);
