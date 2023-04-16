@@ -10,7 +10,10 @@ extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
 extern char DB_MESSAGE_INFO_PATH[PATH_MAX];
 
-
+/**
+ * prints all users accounts.
+ * @param db a database pointer
+ */
 void printAllUserAccounts(DBM *db)
 {
     datum key, data;
@@ -25,7 +28,10 @@ void printAllUserAccounts(DBM *db)
         key = dbm_nextkey(db);
     }
 }
-
+/**
+ * prints all display names.
+ * @param db  a database pointer
+ */
 void printAllDisplayNames(DBM *db)
 {
     datum key, data;
@@ -39,7 +45,10 @@ void printAllDisplayNames(DBM *db)
         key = dbm_nextkey(db);
     }
 }
-
+/**
+ * prints all login information.
+ * @param db a database pointer.
+ */
 void printAllLoginInfos(DBM *db)
 {
     datum key, data;
@@ -53,7 +62,10 @@ void printAllLoginInfos(DBM *db)
         key = dbm_nextkey(db);
     }
 }
-
+/**
+ * prints all channel information
+ * @param db a database pointer.
+ */
 void printAllChannelInfos(DBM *db)
 {
     datum key, data;
@@ -82,7 +94,9 @@ void printAllChannelInfos(DBM *db)
         key = dbm_nextkey(db);
     }
 }
-
+/**
+ * runs the database viewer.
+ */
 void run_db_viewer(void)
 {
     printw("UserAccounts DB\n");

@@ -14,6 +14,13 @@
 
 extern connected_user active_users[MAX_CLIENTS];
 
+/**
+ * Receives message from client and parses the request for handling.
+ * @param fd an integer
+ * @param clnt_addr a string containing IP addr of client making request
+ * @param cache a pointer to connected users holding information about connected users
+ * @return a 0 on success and -1 if any error occurs.
+ */
 int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 {
     int result;
@@ -145,6 +152,12 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
     return 0;
 }
 
+/**
+ * Reads the header from the message.
+ * @param fd an integer
+ * @param header_out a pointer to chat_header_t where the information will be stored
+ * @return -1 upon failure, 0 upon success.
+ */
 int read_header(int fd, chat_header_t *header_out)
 {
     /*
@@ -185,6 +198,13 @@ int read_header(int fd, chat_header_t *header_out)
     return 0;
 }
 
+/**
+ * Read from dispatch sent by client and create a user.
+ * @param fd an integer.
+ * @param token_out a character array length of TOKEN_NAME_LENGTH, store the login token of the newly created account
+ * @param body_size unsigned 16 bit integer.
+ * @return 0 on success and -1 with appropriate error code.
+ */
 int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -262,6 +282,14 @@ int read_and_create_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bod
     return ERROR_CREATE_USER_DUPLICATE_DISPLAY_NAME;
 }
 
+/**
+ * Read the client dispatch and destroy user.
+ * @param fd an integer
+ * @param token_out a character array stored in token_out
+ * @param body_size an unsigned 16 bit integer
+ * @param cache a pointer to cache of connected users
+ * @return 0 upon success and -1 with corresponding error code.
+ */
 int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, connected_user* cache)
 {
     char buffer[DEFAULT_BUFFER];
@@ -360,6 +388,15 @@ int read_and_destroy_user(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t bo
     return ERROR_DESTROY_USER_INVALID_CREDENTIALS;
 }
 
+/**
+ * Read the dispatch sent by client and Login the user.
+ * @param fd an integer
+ * @param token_out a character array being stored in token_out
+ * @param clnt_addr a string containing the client addr
+ * @param cache a pointer to the cache containing user information
+ * @param body_size an unsigned 16bit integer
+ * @return 0 upon success and -1 on failure with error code
+ */
 int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -490,6 +527,12 @@ int read_and_login_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* c
     return TERMINATE_AND_RESTABLISH_CONNECTION;
 }
 
+/**
+ * builds a list of channel names.
+ * @param channels a pointer to channel_info_t structures
+ * @param channel_count an integer
+ * @return success returns a list. upon failure returns NULL.
+ */
 char* build_channel_name_list(channel_info_t** channels, int channel_count)
 {
     char* list = NULL;
@@ -514,6 +557,15 @@ char* build_channel_name_list(channel_info_t** channels, int channel_count)
     return list;
 }
 
+/**
+ * Reads the dispatch sent by client and logs user out.
+ * @param fd an integer
+ * @param token_out a character array
+ * @param clnt_addr a string
+ * @param cache a pointer to cache containing connected users
+ * @param body_size an unsigned 16 bit integer
+ * @return 0 upon success. -1 on error with error response
+ */
 int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* clnt_addr, connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -598,6 +650,14 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
     return ERROR_LOGOUT_ADMIN_USER_NOT_ONLINE;
 }
 
+/**
+ * Read client dispatch and create channel.
+ * @param fd integer
+ * @param token_out a character array
+ * @param body_size an unsigned 16 bit integer
+ * @param clnt_addr a character array
+ * @return 0 upon success and -1 on error with error response.
+ */
 int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t body_size, const char clnt_addr[CLNT_IP_ADDR_LENGTH])
 {
     int result;
@@ -672,6 +732,15 @@ int read_and_create_channel(int fd, char token_out[TOKEN_NAME_LENGTH], uint16_t 
     return 0;
 }
 
+/**
+ * Reads the dispatch sent by client and creates a message.
+ * @param fd an integer
+ * @param token_out a character array
+ * @param forward_token a character array
+ * @param cache a pointer to connected user cache
+ * @param body_size an unsigned 16 bit integer.
+ * @return 0 upon success and -1 on error with error response
+ */
 int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forward_token[TOKEN_NAME_LENGTH], connected_user* cache, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -792,6 +861,13 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
     return ERROR_USER_DOES_NOT_EXIST;
 }
 
+/**
+ * Reads dispatch sent by client and reads the channel
+ * @param fd an integer
+ * @param channel_info_out a pointer to channel information going out
+ * @param body_size an unsigned 16 bit integer.
+ * @return 0 upon success and -1 on error with error message.
+ */
 int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -896,6 +972,13 @@ int read_and_read_channel(int fd, char* channel_info_out, uint16_t body_size)
     return 0;
 }
 
+/**
+ * Reads and retrieves messages for a channel from the server
+ * @param fd an integer
+ * @param message_info_out a pointer to a buffer
+ * @param body_size an unsigned 16bit integer.
+ * @return 0 upon success and -1 on error with response code.
+ */
 int read_and_read_message(int fd, char* message_info_out, uint16_t body_size)
 {
     // TODO CURRENT CURRENT
@@ -1016,6 +1099,15 @@ char* build_message_list(message_info_t** messages, int message_count, char* cha
     return list;
 }
 
+/**
+ * Sends a repsonse to the message sent by client
+ * @param fd an integer
+ * @param header chat_header_t head
+ * @param result an integer
+ * @param message_info_token a pointer to character array
+ * @param clnt_addr a pointer to client address
+ * @return 0 upon success or -1 with error response.
+ */
 int send_read_message_response(int fd, chat_header_t header, int result, char* message_info_token, const char* clnt_addr)
 {
     char body[MAX_MSG_HISTORY_RES + 200] = {'\0', };
@@ -1050,6 +1142,13 @@ int send_read_message_response(int fd, chat_header_t header, int result, char* m
     return 0;
 }
 
+/**
+ * Reads dispatch from client and updates the channel.
+ * @param fd an integer
+ * @param channel_info_out a pointer to channel info
+ * @param body_size an unsigned 16bit integer.
+ * @return 0 upon sucess or -1 with error response.
+ */
 int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
 {
     char buffer[DEFAULT_BUFFER];
@@ -1381,6 +1480,13 @@ int read_and_update_channel(int fd, char* channel_info_out, uint16_t body_size)
     return 0;
 }
 
+/**
+ * Allocates memory for a user_login_t struct and initializes it.
+ * @param login_token a pointer to logintoken stored in the struct
+ * @param password a pointer to the password stored in struct
+ * @param user_id a pointer to user id stored in struct
+ * @return 0 upon success or -1 with error response.
+ */
 user_login_t* generate_user_login_malloc_or_null(const char* login_token, const char* password, const char* user_id)
 {
     user_login_t* user_login = (user_login_t*) malloc(sizeof(user_login_t));
@@ -1416,6 +1522,13 @@ user_account_t* generate_user_account_malloc_or_null(const char* uuid, const cha
     return user_account;
 }
 
+/**
+ * Allocates memory for the creation of a channel
+ * @param channel_name a pointer to channel name in the struct
+ * @param display_name a pointer to display_name in the struct
+ * @param publicity a boolean
+ * @return NULL if error or channel upon success
+ */
 channel_info_t* create_channel_or_null_malloc(const char* channel_name, const char* display_name, bool publicity)
 {
     channel_info_t* ret_channel = (channel_info_t*) malloc(sizeof(channel_info_t));
@@ -1440,6 +1553,14 @@ channel_info_t* create_channel_or_null_malloc(const char* channel_name, const ch
     return ret_channel;
 }
 
+/**
+ * Allocates memory for the creation of a messages.
+ * @param display_name  a pointer to displayname
+ * @param channel a pointer ot the channel in the channel_info_t struct
+ * @param message_body a pointer to the message_body
+ * @param timestamp an unsigned 8 bit integer
+ * @return NULL upon error or message upon success
+ */
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
                                                 char* message_body, const uint8_t* timestamp)
 {
@@ -1468,6 +1589,12 @@ message_info_t* generate_message_malloc_or_null(char* display_name, channel_info
     return message;
 }
 
+/**
+ * Allocates memory to the user account loging in
+ * @param user_acc a pointer to user_account_t struct
+ * @param clnt_addr a pointer to a string representing client IP addr
+ * @return NULL if user_acc is null or updated user_acc struct.
+ */
 user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, const char* clnt_addr)
 {
     if (user_acc == NULL) {
@@ -1483,6 +1610,11 @@ user_account_t* login_user_account_malloc_or_null(user_account_t* user_acc, cons
     return user_acc;
 }
 
+/**
+ * Allocates memory to loging out the user.
+ * @param user_acc a pointer to user_account_t struct
+ * @return NULL if user_acc is null or updated user_acc
+ */
 user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc)
 {
     if (user_acc == NULL) {
@@ -1494,6 +1626,15 @@ user_account_t* logout_user_account_malloc_or_null(user_account_t* user_acc)
     return user_acc;
 }
 
+/**
+ * Creates the response to client to be sent.
+ * @param fd an integer
+ * @param header header in chat_header_t struct
+ * @param result an integer
+ * @param token a pointer to token
+ * @param clnt_addr a pointer to client addr
+ * @return 0 upon success or -1 followed by error response
+ */
 int send_create_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1529,6 +1670,15 @@ int send_create_user_response(int fd, chat_header_t header, int result, const ch
     return 0;
 }
 
+/**
+ * Creates a response to the destroy user dispatch.
+ * @param fd an integer
+ * @param header chat_header_t header
+ * @param result an integer
+ * @param token a pointer to token
+ * @param clnt_addr a pointer to client addr
+ * @return 0 upon succes, or -1 with error response message.
+ */
 int send_destroy_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1569,6 +1719,15 @@ int send_destroy_user_response(int fd, chat_header_t header, int result, const c
     return 0;
 }
 
+/**
+ * Sends a response to user logging in.
+ * @param fd an integer
+ * @param header
+ * @param result an integer
+ * @param token a pointer to token
+ * @param clnt_addr a pointer to client address
+ * @return 0 upon success and -1 with error message.
+ */
 int send_login_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1605,6 +1764,15 @@ int send_login_user_response(int fd, chat_header_t header, int result, const cha
     return 0;
 }
 
+/**
+ * Sends a response when the user logs out
+ * @param fd an integer
+ * @param header a chat_header_t header
+ * @param result an integer
+ * @param token a pointer to token
+ * @param clnt_addr a pointer to cleint address
+ * @return 0 upon success or -1 wtih error response
+ */
 int send_logout_user_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1655,6 +1823,15 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
     return 0;
 }
 
+/**
+ * Sends a respone to chanel creation.
+ * @param fd an integer
+ * @param header a chat_header_t header
+ * @param result an integer
+ * @param token a pointer to a token
+ * @param clnt_addr a pointer to client address
+ * @return 0 upon success and -1 with error response message.
+ */
 int send_create_channel_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1697,6 +1874,15 @@ int send_create_channel_response(int fd, chat_header_t header, int result, const
     return 0;
 }
 
+/**
+ * Sends a response to creating a message
+ * @param fd an integer
+ * @param header a chat_header_t header
+ * @param result an integer
+ * @param token a pointer to a token
+ * @param clnt_addr a pointer to the client address
+ * @return 0 upon success or -1 with error response message.
+ */
 int send_create_message_response(int fd, chat_header_t header, int result, const char* token, const char* clnt_addr)
 {
     char body[DEFAULT_BUFFER] = {'\0', };
@@ -1744,6 +1930,15 @@ int send_create_message_response(int fd, chat_header_t header, int result, const
     return 0;
 }
 
+/**
+ * Sends a response to read_channel.
+ * @param fd an integer
+ * @param header a chat_header_t header
+ * @param result an integer
+ * @param channel_info_token a pointer to channel_info_token
+ * @param clnt_addr a pointer to the client address
+ * @return 0 upon success or -1 with error response message.
+ */
 int send_read_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr)
 {
     char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
@@ -1782,6 +1977,15 @@ int send_read_channel_response(int fd, chat_header_t header, int result, const c
     return 0;
 }
 
+/**
+ * Sends response to updating a channel
+ * @param fd an integer
+ * @param header a chat_header_t header
+ * @param result an integer
+ * @param channel_info_token a pointer to channel_info_token
+ * @param clnt_addr a pointer to the client address
+ * @return 0 upon success or -1 with error response message.
+ */
 int send_update_channel_response(int fd, chat_header_t header, int result, const char* channel_info_token, const char* clnt_addr)
 {
     char body[TEMP_CHANNEL_INFO_LENGTH] = {'\0', };
@@ -1820,6 +2024,11 @@ int send_update_channel_response(int fd, chat_header_t header, int result, const
     return 0;
 }
 
+/**
+ * Retreives the number of users.
+ * @param cache a pointer to cache with connected users.
+ * @return an integer of how many connected users.
+ */
 int get_num_connected_users(connected_user* cache)
 {
     int n  = 0;
@@ -1833,6 +2042,14 @@ int get_num_connected_users(connected_user* cache)
     return n;
 }
 
+/**
+ * Inserts the users into cache of active users
+ * @param fd an integer
+ * @param cache a pointer to cache of connected_users
+ * @param connecting_user a pointer to struct of connecting_user
+ * @param login_info a pointer to login in user_login_t struct
+ * @param num_active_users an integer
+ */
 void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connecting_user, user_login_t* login_info, int num_active_users)
 {
     connected_user insert_user;
@@ -1860,6 +2077,12 @@ void insert_user_in_cache(int fd, connected_user* cache, user_account_t* connect
     }
 }
 
+/**
+ * Removes users in cache.
+ * @param cache a pointer to the connected_user
+ * @param connecting_user a pointer to the user_account_t struct
+ * @param num_active_users an integer
+ */
 void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user, int num_active_users)
 {
     for (int i = 0; i < num_active_users; i++) {
@@ -1884,6 +2107,12 @@ void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user
     }
 }
 
+/**
+ * Searches for duplicate users
+ * @param cache a pointer to connected_user struct
+ * @param active_users_count an integer
+ * @return 0 upon success or -1 if error.
+ */
 int find_duplicate_user(connected_user* cache, int active_users_count)
 {
     int min_fd = 4;
@@ -1904,6 +2133,12 @@ int find_duplicate_user(connected_user* cache, int active_users_count)
     return found_duplicate ? min_fd : -1;
 }
 
+/**
+ * Retreives connected users via displayname.
+ * @param cache a pointer to connected_user struct
+ * @param display_name a pointer to displayname
+ * @return displayname or NULL
+ */
 connected_user* get_connected_user_by_display_name(connected_user* cache, const char* display_name)
 {
     int num_connected_users = get_num_connected_users(cache);
@@ -1917,6 +2152,12 @@ connected_user* get_connected_user_by_display_name(connected_user* cache, const 
     return NULL;
 }
 
+/**
+ * Retrieves connected user by file descriptor
+ * @param cache a pointer to connected_user struct
+ * @param fd a file descriptor
+ * @return connected user or NULL
+ */
 connected_user* get_connected_user_by_fd(connected_user* cache, int fd)
 {
     int num_connected_users = get_num_connected_users(cache);
@@ -1930,6 +2171,14 @@ connected_user* get_connected_user_by_fd(connected_user* cache, int fd)
     return NULL;
 }
 
+/**
+ * Retrieves users with the same credentials
+ * @param user_account a pointer to user_account in user_account_t struct
+ * @param conn_users a pointer to connected_users
+ * @param num_users an integer
+ * @param fd an integer
+ * @return false (0) if failure, and true (1) if user found.
+ */
 bool find_connected_user_with_same_cred(user_account_t* user_account, connected_user* conn_users, int num_users, int fd)
 {
     if (num_users == 0) {
@@ -1949,6 +2198,11 @@ bool find_connected_user_with_same_cred(user_account_t* user_account, connected_
     return false;
 }
 
+/**
+ * Creating a response header.
+ * @param header a pointer to a header in chat_header_t*
+ * @return seriealized header.
+ */
 uint32_t create_response_header(const chat_header_t* header)
 {
     uint32_t serialized_header;
@@ -1972,6 +2226,10 @@ uint32_t create_response_header(const chat_header_t* header)
     return serialized_header;
 }
 
+/**
+ * Display the users that are connected.
+ * @param cache a pointer to connected_user
+ */
 void view_active_users(connected_user* cache)
 {
     int i = 0;
@@ -1994,6 +2252,12 @@ void view_active_users(connected_user* cache)
     }
 }
 
+/**
+ * Allocates memory to the display name
+ * @param ip_addr an array of characters
+ * @param display_name a pointer to displayname
+ * @return displayname
+ */
 char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_LENGTH], char* display_name)
 {
     int active_user_count = get_num_connected_users(active_users);
