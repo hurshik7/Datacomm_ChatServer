@@ -181,6 +181,7 @@ channel_info_t* get_channel_info_malloc_or_null(char* channel_name)
         if (strcmp(k_channel->channel_name, channel_name) == 0) {
             channel_info_t* ret_channel_info = (channel_info_t*) malloc(sizeof(channel_info_t));
             memcpy(ret_channel_info, k_channel, sizeof(channel_info_t));
+            dbm_close(channel_infos);
             return ret_channel_info;
         }
     }
@@ -307,7 +308,7 @@ bool check_duplicate_display_name(char* display_name)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = display_name;
-    key.dsize = strlen(display_name);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     value = dbm_fetch(display_names, key);
     if (value.dptr == NULL) {
