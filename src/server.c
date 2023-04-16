@@ -85,6 +85,9 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
         case OBJECT_MESSAGE:
             if (header.version_type.type == TYPE_CREATE) {
                 result = read_and_create_message(fd, token, forward_token, cache, header.body_size);
+                if (result == CREATE_MESSAGE_ACK) {
+                    break;
+                }
                 send_create_message_response(fd, header, result, token, clnt_addr);
                 channel_info_t* current_channel = get_channel_info_malloc_or_null(token);
                 for (int i = 0; i < get_num_connected_users(cache); i++) {
@@ -144,6 +147,7 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 
 int read_header(int fd, chat_header_t *header_out)
 {
+    /*
     ssize_t nread = read(fd, &header_out->version_type, 1);
     if (nread < 0) {
         perror("[SERVER]Error: read() in read_header(), reading version_type");
@@ -163,6 +167,21 @@ int read_header(int fd, chat_header_t *header_out)
     }
 
     header_out->body_size = ntohs(header_out->body_size);
+     */
+    uint32_t value = 0;
+    ssize_t nread = read(fd, &value, 1);
+    value = ntohl(value);
+
+    header_out->version_type.version = (value >> 28) & 0x0F; // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    header_out->version_type.type = (value >> 24) & 0x0F;    // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
+    uint32_t header2 = 0;
+    nread = read(fd, &header2, 3);
+    header2 = ntohl(header2);
+
+    header_out->object = (header2 >> 24) & 0xFF;  // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+    header_out->body_size = (header2 >> 8) & 0xFFFF;     // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
     return 0;
 }
 
@@ -679,6 +698,11 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
     char timestamp[TIMESTAMP_SIZE] = { '\0', };
     char* token = strtok(buffer, "\3");
     strncpy(display_name, token, strlen(token)); // display-name
+
+    if (strcmp(display_name, "200") == 0) {
+        return CREATE_MESSAGE_ACK;
+    }
+
     token = strtok(NULL, "\3");
     strncpy(channel_name, token, strlen(token)); // channel-name
     token = strtok(NULL, "\3");
