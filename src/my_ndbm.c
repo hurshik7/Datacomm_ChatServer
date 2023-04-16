@@ -116,7 +116,7 @@ char* get_uuid_with_display_name_or_null(char* display_name)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = display_name;
-    key.dsize = strlen(display_name);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     value = dbm_fetch(display_names, key);
     if (value.dptr == NULL) {
@@ -124,8 +124,10 @@ char* get_uuid_with_display_name_or_null(char* display_name)
         return NULL;
     }
 
+    char* ret_uuid = (char*) malloc(UUID_LEN);
+    strncpy(ret_uuid, (char*) value.dptr, UUID_LEN);
     dbm_close(display_names);
-    return (char*) value.dptr;
+    return ret_uuid;
 }
 
 message_info_t* get_message_malloc_or_null(char* user_token)
@@ -139,7 +141,7 @@ message_info_t* get_message_malloc_or_null(char* user_token)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = user_token;
-    key.dsize = strlen(user_token);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     value = dbm_fetch(message_db, key);
     if (value.dptr == NULL) {
@@ -426,7 +428,7 @@ int insert_user_login(user_login_t* user_login)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = user_login->login_token;
-    key.dsize = strlen(user_login->login_token);
+    key.dsize = TOKEN_NAME_LENGTH;
     value.dptr = user_login;
     value.dsize = sizeof(user_login_t);
 
@@ -531,7 +533,7 @@ int remove_display_name(char* display_name)
     memset(&key, 0, sizeof(datum));
 
     key.dptr = display_name;
-    key.dsize = strlen(display_name);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     if (dbm_delete(display_names, key) != 0) {
         perror("[DB]Error: Failed to remove display_name\n");
@@ -555,7 +557,7 @@ int remove_user_login(char* login_token)
     memset(&key, 0, sizeof(datum));
 
     key.dptr = login_token;
-    key.dsize = strlen(login_token);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     if (dbm_delete(user_logins, key) != 0) {
         perror("[DB]Error: Failed to remove user login information\n");
