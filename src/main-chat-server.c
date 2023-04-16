@@ -110,7 +110,11 @@ int main(int argc, char *argv[])
     endwin();
     return 0;
 }
-
+/**
+ * initializes an array of pollfd structures with the given server socket and MAX_CLIENTS value.
+ * @param pollfds pointer to an array of pollfd structures to be initialized
+ * @param server_sock file descriptor
+ */
 static void init_pollfd(struct pollfd* pollfds, int server_sock)
 {
     memset(pollfds, 0, sizeof(struct pollfd));
@@ -124,6 +128,11 @@ static void init_pollfd(struct pollfd* pollfds, int server_sock)
     }
 }
 
+/**
+ * runs the server thread and wits for incoming connections.
+ * @param arg pointer to option struct
+ * @return NULL
+ */
 void* run_server_thread(void* arg)
 {
     clear();
@@ -141,6 +150,11 @@ void* run_server_thread(void* arg)
     return NULL;
 }
 
+/**
+ * Runs a server with given options
+ * @param opts point to option struct.
+ * @return 0 if server exits normally. -1 if an error occurs in initializing server.
+ */
 int run_server(struct options* opts)
 {
     struct sockaddr_in client_addr;
