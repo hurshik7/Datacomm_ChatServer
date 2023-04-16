@@ -147,29 +147,28 @@ int handle_request(int fd, const char* clnt_addr, connected_user* cache)
 
 int read_header(int fd, chat_header_t *header_out)
 {
-    /*
-    ssize_t nread = read(fd, &header_out->version_type, 1);
-    if (nread < 0) {
-        perror("[SERVER]Error: read() in read_header(), reading version_type");
-        return -1;
-    }
+//    ssize_t nread = read(fd, &header_out->version_type, 1);
+//    if (nread < 0) {
+//        perror("[SERVER]Error: read() in read_header(), reading version_type");
+//        return -1;
+//    }
+//
+//    nread = read(fd, &header_out->object, 1);
+//    if (nread < 0) {
+//        perror("[SERVER]Error: read() in read_header(), object");
+//        return -1;
+//    }
+//
+//    nread = read(fd, &header_out->body_size, 2);
+//    if (nread < 0) {
+//        perror("[SERVER]Error: read() in read_header(), body_size");
+//        return -1;
+//    }
 
-    nread = read(fd, &header_out->object, 1);
-    if (nread < 0) {
-        perror("[SERVER]Error: read() in read_header(), object");
-        return -1;
-    }
-
-    nread = read(fd, &header_out->body_size, 2);
-    if (nread < 0) {
-        perror("[SERVER]Error: read() in read_header(), body_size");
-        return -1;
-    }
-
-    header_out->body_size = ntohs(header_out->body_size);
-     */
+//    header_out->body_size = ntohs(header_out->body_size);
     uint32_t value = 0;
     ssize_t nread = read(fd, &value, 1);
+    assert(nread == 1);
     value = ntohl(value);
 
     header_out->version_type.version = (value >> 28) & 0x0F; // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -177,6 +176,7 @@ int read_header(int fd, chat_header_t *header_out)
 
     uint32_t header2 = 0;
     nread = read(fd, &header2, 3);
+    assert(nread == 3);
     header2 = ntohl(header2);
 
     header_out->object = (header2 >> 24) & 0xFF;  // NOLINT(hicpp-signed-bitwise,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
@@ -536,6 +536,8 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
 
     // get uuid with the display name
     char* uuid_of_user = get_uuid_with_display_name_or_null(display_name);
+    printw("uuid: %s\n", uuid_of_user);
+    refresh();
     // get user account with the uuid
     user_account_t* user_account = get_user_account_malloc_or_null(uuid_of_user);
 
