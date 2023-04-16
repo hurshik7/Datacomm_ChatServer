@@ -59,6 +59,8 @@
 
 #define ERROR_READ_MESSAGE_206 (206)
 
+#define CREATE_MESSAGE_ACK (69)
+
 typedef struct version_type {
     uint8_t  version:4;
     uint8_t  type:4;
