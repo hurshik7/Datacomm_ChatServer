@@ -39,7 +39,7 @@ set(CHAT_SERVER_HEADER_LIST
         ${INCLUDE_DIR}/util.h
         )
 set(CHAT_SERVER_REQUIRED_LIBRARIES_LIST
-        Curses
+        ncurses
         )
 
 list(APPEND TEST_REQUIRED_LIBRARIES_LIST
@@ -295,6 +295,13 @@ endfunction()
 
 function(add_executable_target target_name source_files main_source_files header_files libraries_files link_libraries_fn install_name)
     add_executable(${target_name} ${${source_files}} ${${main_source_files}} ${${header_files}})
+
+    ## for Fedora
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    else()
+        find_library(NDBM_LIBRARY NAMES ndbm gdbm_compat)
+        target_link_libraries(${target_name} PRIVATE ${NDBM_LIBRARY})
+    endif()
 
     list(LENGTH ${libraries_files} list_length)
     if (list_length)
