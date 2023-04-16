@@ -50,7 +50,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
     memset(&value, 0, sizeof(datum));
 
     key.dptr = login_token;
-    key.dsize = strlen(login_token);
+    key.dsize = TOKEN_NAME_LENGTH;
 
     value = dbm_fetch(login_info_db, key);
     if (value.dptr == NULL) {
