@@ -1,4 +1,5 @@
 #include "db_viewer.h"
+#include <fcntl.h>
 #include <limits.h>
 #include <ncurses.h>
 
