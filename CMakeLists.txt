@@ -301,6 +301,8 @@ function(add_executable_target target_name source_files main_source_files header
     else()
         find_library(NDBM_LIBRARY NAMES ndbm gdbm_compat)
         target_link_libraries(${target_name} PRIVATE ${NDBM_LIBRARY})
+        find_library(UUID_LIBRARY NAMES uuid)
+        target_link_libraries(${target_name} PRIVATE ${UUID_LIBRARY})
     endif()
 
     list(LENGTH ${libraries_files} list_length)
