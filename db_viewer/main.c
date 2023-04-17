@@ -5,7 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-// fcntl must be explicitly declared when running db_viewer on Linux
+// fcntl must be explicitly declared when
+//#define TOKEN_NAME_LENGTH (20)
+//#define PSWD_MAX_LENGTH (30)
+//#define UUID_LEN (37)
+//#define MAX_IP_ADD_STR_LENGTH (16)running db_viewer on Linux
 #include <fcntl.h>
 #include <sys/utsname.h>
 

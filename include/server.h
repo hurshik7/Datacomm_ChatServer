@@ -60,6 +60,7 @@
 #define ERROR_READ_MESSAGE_206 (206)
 
 #define CREATE_MESSAGE_ACK (69)
+#define ERROR_DESTROY_AUTH_500 (500)
 
 typedef struct version_type {
     uint8_t  version:4;

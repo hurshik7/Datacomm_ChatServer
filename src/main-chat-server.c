@@ -87,6 +87,14 @@ int main(int argc, char *argv[])
         memset(&(active_users[i]), 0, sizeof(connected_user));
     }
 
+    // dup2 log file
+    int fp = open("err_log.txt", O_CREAT | O_WRONLY, 0644);
+    if (fp == -1) {
+        perror("opening err_log.txt file");
+        exit(EXIT_FAILURE);
+    }
+    dup2(fp, STDERR_FILENO);
+
     // Display menu
     while (!quit) {
         print_title(startx);
@@ -107,6 +115,7 @@ int main(int argc, char *argv[])
                         }
                         usleep(ONE_MILLISECOND); // Sleep for 1ms to avoid busy waiting
                     }
+                    close(opts.server_sock);
                     pthread_join(server_thread, NULL);
                 }
                 break;
@@ -129,6 +138,7 @@ int main(int argc, char *argv[])
     clrtoeol();
     refresh();
     endwin();
+    close(fp);
     return 0;
 }
 

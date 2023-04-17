@@ -643,8 +643,18 @@ int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE
     int i = 0;
     int j = 0;
     while (j < DEFAULT_LIST_SIZE && fetched_channel->user_list[j][0] != '\0') {
+        // if the user id already in the channel, exit
+        for (i = 0; i < DEFAULT_LIST_SIZE; i++) {
+            if (users_to_add[i][0] == '\0') {
+                break;
+            }
+            if (strcmp(fetched_channel->user_list[j], users_to_add[i]) == 0) {
+                users_to_add[i][0] = '\0';
+            }
+        }
         j++;
     }
+    i = 0;
     // does not check if a user already exists before adding them
     while (j < DEFAULT_LIST_SIZE && i < DEFAULT_LIST_SIZE && users_to_add[i][0] != '\0') {
         strncpy(fetched_channel->user_list[j++], users_to_add[i], TOKEN_NAME_LENGTH);
@@ -675,7 +685,7 @@ int create_admin(void)
 {
     const char* uuid = "00000000-0000-0000-0000-000000000000";
     char *uuid_string = malloc(UUID_LEN);
-    strncpy(uuid_string, uuid, UUID_LEN + 1);
+    strncpy(uuid_string, uuid, UUID_LEN);
     char admin_name[TOKEN_NAME_LENGTH] = "admin";
 
     bool is_display_name_duplicates = check_duplicate_display_name(admin_name);
@@ -684,7 +694,7 @@ int create_admin(void)
     }
 
     // create admin credentials
-    user_login_t admin_login = {"admin", "admin", "admin"};
+    user_login_t admin_login = {"admin", "admin", "00000000-0000-0000-0000-000000000000"};
     user_account_t* admin_account = generate_user_account_malloc_or_null(uuid, "admin");
 
     int display_name_result = insert_display_name(admin_name, uuid_string);
@@ -708,6 +718,7 @@ int create_admin(void)
     assert(account_result == 0 && login_result == 0 && display_name_result == 0);
 
     free(admin_account);
+    free(uuid_string);
     return 0;
 }
 
