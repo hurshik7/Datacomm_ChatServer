@@ -24,6 +24,8 @@ typedef struct chat_header {
 
 
 int copy(int from_fd, int to_fd, size_t count);
+uint32_t create_response_header(const chat_header_t* header);
+
 
 int main(void) {
 
@@ -157,62 +159,59 @@ int main(void) {
             uint32_t temp_int = 0;
             memcpy(&temp_int, &test_header, sizeof(test_header));
 
-                if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
-                    perror("send");
-                }
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
 
-                if (send(client_socket, body, body_size, 0) < 0) {
-                    perror("send");
-                }
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
 
-                char buffer[DEFUALT_BUFFER];
-                if (read(client_socket, buffer, sizeof(test_header)) < 0) {
-                    perror("read");
-                }
-                memset(buffer, '\0', DEFUALT_BUFFER);
-                if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
-                    perror("recv");
-                }
-                printf("res: %s\n", buffer);
-                sleep(5);
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+                perror("read");
+            }
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+                perror("recv");
+            }
+            printf("res: %s\n", buffer);
+            sleep(1);
         } else if (choice == '3') {
             // DESTROY_AUTH
             chat_header_t test_header;
             memset(&test_header, 0, sizeof(chat_header_t));
-            test_header.version_type.version = 1;
-            test_header.version_type.type = 4;
-            test_header.object = 4;
+            test_header.version_type.version = (uint8_t) 1;
+            test_header.version_type.type = (uint8_t) 4;
+            test_header.object = (uint8_t) 4;
             // for testing read_header
             printf("version: %d\n", test_header.version_type.version);
             printf("type: %d\n", test_header.version_type.type);
             printf("object: %d\n", test_header.object);
 
-            char body[] = "bennychao\0";
+            char body[] = "benny\3\0";
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
 
-                if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
-                    perror("send");
-                }
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
 
-                if (send(client_socket, body, body_size, 0) < 0) {
-                    perror("send");
-                }
-
-                char buffer[DEFUALT_BUFFER];
-                if (read(client_socket, buffer, sizeof(test_header)) < 0) {
-                    perror("read");
-                }
-                memset(buffer, '\0', DEFUALT_BUFFER);
-                if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
-                    perror("recv");
-                }
-                printf("res: %s\n", buffer);
-                sleep(5);
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+                perror("read");
+            }
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+                perror("recv");
+            }
+            printf("res: %s\n", buffer);
+            sleep(1);
         } else if (choice == '4') {
             // DESTROY_AUTH_ADMIN
             chat_header_t test_header;
@@ -233,23 +232,23 @@ int main(void) {
             uint32_t temp_int = 0;
             memcpy(&temp_int, &test_header, sizeof(test_header));
 
-                if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
-                    perror("send");
-                }
+            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+                perror("send");
+            }
 
-                if (send(client_socket, body, body_size, 0) < 0) {
-                    perror("send");
-                }
+            if (send(client_socket, body, body_size, 0) < 0) {
+                perror("send");
+            }
 
-                char buffer[DEFUALT_BUFFER];
-                if (read(client_socket, buffer, sizeof(test_header)) < 0) {
-                    perror("read");
-                }
-                memset(buffer, '\0', DEFUALT_BUFFER);
-                if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
-                    perror("recv");
-                }
-                printf("res: %s\n", buffer);
+            char buffer[DEFUALT_BUFFER];
+            if (read(client_socket, buffer, sizeof(test_header)) < 0) {
+                perror("read");
+            }
+            memset(buffer, '\0', DEFUALT_BUFFER);
+            if (read(client_socket, buffer, DEFUALT_BUFFER) < 0) {
+                perror("recv");
+            }
+            printf("res: %s\n", buffer);
         } else if (choice == '5') {
             // CREATE CHANNEL
             chat_header_t test_header;
@@ -308,12 +307,10 @@ int main(void) {
             sprintf(body, "benny\3comp4981 channel\3new message\3%hhu", send_this);
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
 
-            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            if (send(client_socket, &temp_int, sizeof(chat_header_t), 0) < 0) {
                 perror("send");
             }
 
@@ -347,12 +344,10 @@ int main(void) {
             sprintf(body, "benny\3bennychao\3monkey123");
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
 
-            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            if (send(client_socket, &temp_int, sizeof(chat_header_t), 0) < 0) {
                 perror("send");
             }
 
@@ -374,9 +369,9 @@ int main(void) {
 
             chat_header_t test_header;
             memset(&test_header, 0, sizeof(chat_header_t));
-            test_header.version_type.version = 1;
-            test_header.version_type.type = 2;
-            test_header.object = 2;
+            test_header.version_type.version = (uint8_t) 1;
+            test_header.version_type.type = (uint8_t) 2;
+            test_header.object = (uint8_t) 2;
             // for testing read_header
             printf("version: %d\n", test_header.version_type.version);
             printf("type: %d\n", test_header.version_type.type);
@@ -389,12 +384,11 @@ int main(void) {
             strcat(body, "0\3"); // don't want to get the banned list
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
+            printf("sizeof(chat_header): %ld, sizeof(uint32_t): %ld\n", sizeof(chat_header_t), sizeof(uint32_t));
 
-            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            if (send(client_socket, &temp_int, sizeof(chat_header_t), 0) < 0) {
                 perror("send");
             }
 
@@ -435,17 +429,15 @@ int main(void) {
             strcat(body, "0\3"); // change channel name?
             strcat(body, "0\3"); // don't want to get the banned list
             strcat(body, "1\3"); // alter users?
-            strcat(body, "1\3user\3"); // new channel name
+            strcat(body, "1\3admin\3"); // users to add
             strcat(body, "0\3"); // alter admins?
             strcat(body, "0\3"); // alter banned?
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
 
-            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            if (send(client_socket, &temp_int, sizeof(chat_header_t), 0) < 0) {
                 perror("send");
             }
 
@@ -485,12 +477,10 @@ int main(void) {
             sprintf(body, "comp4981 channel\3%d\3", 10);
             test_header.body_size = (uint16_t) strlen(body);
             uint16_t body_size = test_header.body_size;
-            test_header.body_size = htons(test_header.body_size);
 
-            uint32_t temp_int = 0;
-            memcpy(&temp_int, &test_header, sizeof(test_header));
+            uint32_t temp_int = create_response_header(&test_header);
 
-            if (send(client_socket, &temp_int, sizeof(uint32_t), 0) < 0) {
+            if (send(client_socket, &temp_int, sizeof(chat_header_t), 0) < 0) {
                 perror("send");
             }
 
@@ -560,4 +550,27 @@ int copy(int from_fd, int to_fd, size_t count)   // NOLINT(bugprone-easily-swapp
     }
 
     return EXIT_SUCCESS;
+}
+
+uint32_t create_response_header(const chat_header_t* header)
+{
+    uint32_t serialized_header;
+    uint32_t version;
+    uint32_t type;
+    uint32_t object;
+    uint32_t body_size;
+
+    version = header->version_type.version;
+    type = header->version_type.type;
+    object = header->object;
+    body_size = header->body_size;
+
+    version <<= 28;
+    type <<= 24;
+    object <<= 16;
+
+    serialized_header = (version | type | object | body_size);
+
+    serialized_header = htonl(serialized_header);
+    return serialized_header;
 }
