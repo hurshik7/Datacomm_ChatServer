@@ -67,3 +67,4 @@ struct utsname identify_os(void);
 bool is_number(const char *str);
 
 #endif /* CHAT_SERVER_UTIL_H */
+

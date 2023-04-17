@@ -13,11 +13,7 @@ extern char DB_USER_ACCOUNT_PATH[PATH_MAX];
 extern char DB_CHANNEL_INFO_PATH[PATH_MAX];
 extern char DB_MESSAGE_INFO_PATH[PATH_MAX];
 
-/**
- * prints the menu box.
- * @param menu_win a WINDOW pointer.
- * @param highlight an integer.
- */
+
 void print_menu(WINDOW *menu_win, int highlight)
 {
     int x, y, i;
@@ -49,10 +45,6 @@ void print_menu(WINDOW *menu_win, int highlight)
     wrefresh(menu_win);
 }
 
-/**
- * create a window for the menu box.
- * @return a WINDOW pointer.
- */
 WINDOW* create_menu_window(void)
 {
     int menu_startx = (COLS - MENU_WIDTH) / 2;
@@ -61,10 +53,6 @@ WINDOW* create_menu_window(void)
     return menu_win;
 }
 
-/**
- * creates a window for the database path.
- * @return a WINDOW pointer.
- */
 WINDOW* create_db_path_window(void)
 {
     int menu_startx = (COLS - DB_PATH_BOX_WIDTH) / 2;
@@ -73,11 +61,6 @@ WINDOW* create_db_path_window(void)
     return db_win;
 }
 
-/**
- * gets the User's input to select an option in the menu.
- * @param menu_win a WINDOW pointer.
- * @return an integer representing the user's choice.
- */
 int navigate_menu(WINDOW *menu_win)
 {
     int choice = 1;
@@ -108,10 +91,6 @@ int navigate_menu(WINDOW *menu_win)
     }
 }
 
-/**
- * prints the title.
- * @param startx an integer representing the start location of x
- */
 void print_title(int startx)
 {
     attron(A_BOLD);
@@ -120,11 +99,6 @@ void print_title(int startx)
     refresh();
 }
 
-/**
- * prints the path to database.
- * @param db_win  a WINDOW pointer
- * @param startx  an integer representing the start location of x
- */
 void print_db_paths(WINDOW* db_win, int startx)
 {
     int y = 1;
@@ -139,9 +113,6 @@ void print_db_paths(WINDOW* db_win, int startx)
     wrefresh(db_win);
 }
 
-/**
- * Initialize ncurses UI.
- */
 void init_ncurses(void)
 {
     // Initialize ncurses
@@ -151,9 +122,6 @@ void init_ncurses(void)
     cbreak();
 }
 
-/**
- * Runs the database viewer thread.
- */
 void run_db_viewer_wrapper(void)
 {
     // Clear the screen
@@ -172,10 +140,6 @@ void run_db_viewer_wrapper(void)
     refresh();
 }
 
-/**
- * Runs the active user thread.
- * @param users a cache containing the current active users
- */
 void run_active_user_viewer(connected_user* users)
 {
     // Clear screen
@@ -192,3 +156,4 @@ void run_active_user_viewer(connected_user* users)
     refresh();
 
 }
+

@@ -6,10 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-/**
- * Initializes the options within the structure.
- * @param opts a struct represents options
- */
+
 void options_init(struct options *opts)
 {
     memset(opts, 0, sizeof(struct options));
@@ -17,13 +14,6 @@ void options_init(struct options *opts)
     opts->server_sock   = STDIN_FILENO;
 }
 
-/**
- * Parses for commandline arguments.
- * @param argc an integer represents the number of command line arguments
- * @param argv an array of char* contains the arguments as strings
- * @param opts a struct represents options
- * @return 0 upon success. -1 if any errors occur.
- */
 int parse_arguments(int argc, char *argv[], struct options *opts)    // NOLINT(readability-function-cognitive-complexity)
 {
     if (argc > MAX_ARG_COUNT || argc % 2 == 0)

@@ -11,11 +11,8 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-align"
-/**
- * Retrieves IP as a string
- * @param sa a pointer to sockaddr struct
- * @param out_str a pointer to character buffer
- */
+
+
 void get_ip_str(const struct sockaddr *sa, char *out_str)
 {
     switch(sa->sa_family) {
@@ -32,11 +29,6 @@ void get_ip_str(const struct sockaddr *sa, char *out_str)
 }
 #pragma GCC diagnostic pop
 
-/**
- * Clears the string
- * @param str a string
- * @param len length of string
- */
 void clear_str(char *str, size_t len)
 {
     size_t i;
@@ -45,9 +37,6 @@ void clear_str(char *str, size_t len)
     }
 }
 
-/**
- * Clears standard input.
- */
 void clean_stdin(void)
 {
     int c;
@@ -56,13 +45,6 @@ void clean_stdin(void)
     } while (c != '\n' && c != EOF);
 }
 
-/**
- * Tokenizes the input string.
- * @param str a pointer to a string
- * @param delim a pointer that contains the delimiter characters
- * @param out_count a pointer the an unsigned 32 bit integer
- * @return pointer to ret.
- */
 char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
 {
     char* temp_str;
@@ -114,10 +96,6 @@ char** tokenize_malloc(const char* str, const char* delim, uint32_t* out_count)
     return ret;
 }
 
-/**
- * Generates a random user id.
- * @return uuid or NULL.
- */
 char* generate_random_uuid_malloc(void)
 {
     uuid_t bin_uuid;
@@ -131,12 +109,6 @@ char* generate_random_uuid_malloc(void)
     return uuid;
 }
 
-/**
- * Compares strings
- * @param str1 a string
- * @param str2 a string
- * @return true if match or false if no match.
- */
 bool compare_strings(const char* str1, const char* str2)
 {
     int i = 0, j = 0;
@@ -164,10 +136,6 @@ bool compare_strings(const char* str1, const char* str2)
     return str1[i] == '\0' && str2[j] == '\0';
 }
 
-/**
- * Identifies operating system.
- * @return unameData.
- */
 struct utsname identify_os(void)
 {
     struct utsname unameData;
@@ -178,11 +146,6 @@ struct utsname identify_os(void)
     return unameData;
 }
 
-/**
- * Checks for a number.
- * @param str a string
- * @return True if number, False if it isn't.
- */
 bool is_number(const char *str)
 {
     for (int i = 0; str[i] != '\0'; ++i) {
@@ -192,3 +155,4 @@ bool is_number(const char *str)
     }
     return true;
 }
+

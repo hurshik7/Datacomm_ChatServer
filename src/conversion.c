@@ -5,12 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/**
- * Parses the string to int_port_t
- * @param buff a string represents port number in string
- * @param radix an integer represents base
- * @return port number in in_port_t type
- */
+
 in_port_t parse_port(const char *buff, int radix)
 {
     char *end;
