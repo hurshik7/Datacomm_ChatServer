@@ -9,10 +9,13 @@
 #include <unistd.h>
 #include <time.h>
 
+
 #define MAX_CLIENTS (255)
 #define TEMP_CHANNEL_INFO_LENGTH (8192)
 
+
 extern connected_user active_users[MAX_CLIENTS];
+
 
 /**
  * Receives message from client and parses the request for handling.
@@ -2274,3 +2277,4 @@ char* get_display_name_in_cache_malloc_or_null(const char ip_addr[CLNT_IP_ADDR_L
     }
     return dis_name;
 }
+
