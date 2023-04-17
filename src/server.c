@@ -591,10 +591,15 @@ int read_and_logout_user(int fd, char token_out[TOKEN_NAME_LENGTH], const char* 
 
     // get uuid with the display name
     char* uuid_of_user = get_uuid_with_display_name_or_null(display_name);
-    printw("uuid: %s\n", uuid_of_user);
-    refresh();
+    if (uuid_of_user == NULL) {
+        return ERROR_DESTROY_AUTH_500;
+    }
     // get user account with the uuid
     user_account_t* user_account = get_user_account_malloc_or_null(uuid_of_user);
+    if (user_account == NULL) {
+        free(uuid_of_user);
+        return ERROR_DESTROY_AUTH_500;
+    }
 
     // TODO PROBLEM HERE
     switch (user_account->privilege_level) {
@@ -1805,6 +1810,9 @@ int send_logout_user_response(int fd, chat_header_t header, int result, const ch
             strcpy(body, "333\3\0");
             strcat(body, "Account has been accessed on another device");
             strcat(body, token);
+        } else if (result == ERROR_DESTROY_AUTH_500) {
+            strcpy(body, "500\3\0");
+            strcat(body, "Internal server error\3");
         } else {
             assert(!"should not be here");
         }
@@ -2093,12 +2101,14 @@ void remove_user_in_cache(connected_user* cache, user_account_t* connecting_user
     for (int i = 0; i < num_active_users; i++) {
         if (strcmp(cache[i].dsply_name, connecting_user->display_name) == 0) {
             for (int j = i; j < num_active_users - 1; j++) {
-                cache[j] = cache[j+1];
+                cache[j] = cache[j + 1];
             }
+            cache[num_active_users - 1].dsply_name[0] = '\0';
             num_active_users--;
             break;
         }
     }
+
 
     // TODO remove testing print statement
     printw("\nActive user count: %d\n", num_active_users);
