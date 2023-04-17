@@ -73,7 +73,7 @@ user_login_t* get_login_info_malloc_or_null(char* login_token)
 
 user_account_t* get_user_account_malloc_or_null(char* user_uuid)
 {
-    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT_PATH, O_RDONLY);
+    DBM* user_acc_db = open_db_or_null(DB_USER_ACCOUNT_PATH, O_RDWR);
     if (user_acc_db == NULL) {
         return NULL;
     }
@@ -105,7 +105,7 @@ user_account_t* get_user_account_malloc_or_null(char* user_uuid)
 
 char* get_uuid_with_display_name_or_null(char* display_name)
 {
-    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDONLY | O_SYNC);
+    DBM* display_names = open_db_or_null(DB_DISPLAY_NAMES_PATH, O_RDWR);
     if (display_names == NULL) {
         //perror("[DB]Error: Failed to open DB_DISPLAY_NAMES DB");
         return NULL;
@@ -353,8 +353,10 @@ bool check_duplicate_channel_name(const char* channel_name)
 bool check_if_user_in_channel(const char* display_name, const channel_info_t* channel)
 {
     for (int i = 0; i < DEFAULT_LIST_SIZE; i++) {
-        if (strcmp(display_name, channel->user_list[i]) == 0) {
-            return true;
+        if (channel->user_list[i][0] != '\0') {
+            if (strcmp(display_name, channel->user_list[i]) == 0) {
+                return true;
+            }
         }
     }
     return false;
