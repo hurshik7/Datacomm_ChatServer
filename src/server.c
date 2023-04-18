@@ -784,7 +784,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
     token = strtok(NULL, "\3");
     strncpy(message_content, token, strlen(token)); // message-body
     token = strtok(NULL, "\3");
-    strncpy(timestamp, token, strlen(token)); // time stamp
+    strncpy(timestamp, token, TIMESTAMP_SIZE); // time stamp
 
     // for init res to sender
     strncpy(token_out, channel_name, TOKEN_NAME_LENGTH);
@@ -849,7 +849,7 @@ int read_and_create_message(int fd, char token_out[TOKEN_NAME_LENGTH], char forw
     assert(is_token_duplicate == true && user_account != NULL);
 
     if (user_account != NULL) {
-        message_info_t* message = generate_message_malloc_or_null(user_in_cache->login_token, channel, message_content, (uint8_t*)timestamp);
+        message_info_t* message = generate_message_malloc_or_null(user_in_cache->login_token, channel, message_content, timestamp);
         insert_message(message);
     }
 
@@ -1572,7 +1572,7 @@ channel_info_t* create_channel_or_null_malloc(const char* channel_name, const ch
  * @return NULL upon error or message upon success
  */
 message_info_t* generate_message_malloc_or_null(char* display_name, channel_info_t* channel,
-                                                char* message_body, const uint8_t* timestamp)
+                                                char* message_body, const char* timestamp)
 {
     message_info_t* message = (message_info_t*) malloc(sizeof(message_info_t));
     if (message == NULL) {
@@ -1586,15 +1586,12 @@ message_info_t* generate_message_malloc_or_null(char* display_name, channel_info
 
     user_login_t* user_login = get_login_info_malloc_or_null(display_name);
 
-    // TODO TIMESTAMP ISSUE
     memset(message, 0, sizeof(user_account_t));
     strncpy(message->message_id, message_uuid, UUID_LEN);
     strncpy(message->user_id, user_login->uuid, UUID_LEN);
     strncpy(message->channel_id, channel->channel_id, UUID_LEN);
     strncpy(message->message_content, message_body, sizeof(message_body_length));
-    for (size_t i = 0; i < TIMESTAMP_SIZE; ++i) {
-        (message->time_stamp)[i] = timestamp[i];
-    }
+    strncpy(message->time_stamp, timestamp, TIMESTAMP_SIZE);
 
     return message;
 }
