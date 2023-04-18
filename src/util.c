@@ -29,14 +29,6 @@ void get_ip_str(const struct sockaddr *sa, char *out_str)
 }
 #pragma GCC diagnostic pop
 
-void clear_str(char *str, size_t len)
-{
-    size_t i;
-    for (i = 0; i < len; i++) {
-        str[i] = '\0';
-    }
-}
-
 void clean_stdin(void)
 {
     int c;

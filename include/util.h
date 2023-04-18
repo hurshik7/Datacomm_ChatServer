@@ -19,13 +19,6 @@
 void get_ip_str(const struct sockaddr *sa, char *out_str);
 
 /**
- * Clear a string.
- * @param str a string
- * @param len the length of the string
- */
-void clear_str(char *str, size_t len);
-
-/**
  * Clean standard input stream.
  */
 void clean_stdin(void);
