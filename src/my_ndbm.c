@@ -640,7 +640,7 @@ int add_users_on_channel(char* channel_name, char users_to_add[DEFAULT_LIST_SIZE
         return -1;
     }
 
-    int i = 0;
+    int i;
     int j = 0;
     while (j < DEFAULT_LIST_SIZE && fetched_channel->user_list[j][0] != '\0') {
         // if the user id already in the channel, exit
